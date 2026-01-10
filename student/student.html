@@ -28,6 +28,26 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .attendance-present { background-color: #DCFCE7; color: #166534; }
         .attendance-absent { background-color: #FEE2E2; color: #991B1B; }
+        
+        /* Dark Mode Styles */
+        .dark .mobile-container { background-color: #1f2937; color: #f9fafb; }
+        .dark body { background-color: #111827; }
+        .dark .bg-white { background-color: #374151; }
+        .dark .text-gray-800 { color: #f3f4f6; }
+        .dark .text-gray-600 { color: #d1d5db; }
+        .dark .text-gray-700 { color: #e5e7eb; }
+        .dark .text-gray-500 { color: #9ca3af; }
+        .dark .border { border-color: #4b5563; }
+        .dark .bg-gray-50 { background-color: #4b5563; }
+        .dark .bg-gray-100 { background-color: #4b5563; }
+        .dark .divide-gray-200 { border-color: #4b5563; }
+        .dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3); }
+        .dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
+        .dark .from-blue-500 { --tw-gradient-from: #2563eb; }
+        .dark .to-blue-600 { --tw-gradient-to: #1d4ed8; }
+        .dark .bg-blue-100 { background-color: #1e3a8a; }
+        .dark .text-blue-800 { color: #93c5fd; }
+        .dark .text-blue-900 { color: #bfdbfe; }
     </style>
 </head>
 <body>
@@ -61,7 +81,7 @@
             console.error("Firebase initialization error:", error);
         }
 
-        // --- Utility Functions ---
+        // --- Enhanced Utility Functions ---
         const formatDate = (dateString) => {
             if (!dateString) return 'None';
             try {
@@ -79,6 +99,41 @@
             const month = String(today.getMonth() + 1).padStart(2, '0');
             const day = String(today.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
+        };
+
+        const getTimeOfDay = () => {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good morning';
+            if (hour < 17) return 'Good afternoon';
+            return 'Good evening';
+        };
+
+        const getGreetingEmoji = () => {
+            const hour = new Date().getHours();
+            if (hour < 12) return '☀️';
+            if (hour < 17) return '🌤️';
+            return '🌙';
+        };
+
+        const calculateGradeColor = (grade) => {
+            if (!grade) return 'gray';
+            const gradeChar = grade.charAt(0).toUpperCase();
+            switch(gradeChar) {
+                case 'A': return 'green';
+                case 'B': return 'blue';
+                case 'C': return 'yellow';
+                case 'D': return 'orange';
+                case 'E': 
+                case 'F': return 'red';
+                default: return 'gray';
+            }
+        };
+
+        const calculateSubjectAverage = (gradesArray, subject) => {
+            const subjectGrades = gradesArray.filter(g => g.subject === subject && g.marks);
+            if (subjectGrades.length === 0) return null;
+            const total = subjectGrades.reduce((sum, g) => sum + parseFloat(g.marks), 0);
+            return (total / subjectGrades.length).toFixed(1);
         };
 
         const fetchFromFirebase = async (path) => {
@@ -137,11 +192,12 @@
                 { id: 'attendance', icon: 'user-check', label: 'Attendance' },
                 { id: 'grades', icon: 'book-check', label: 'Grades' }, 
                 { id: 'homework', icon: 'notebook-pen', label: 'Homework' },
-                { id: 'timetable', icon: 'calendar', label: 'Timetable' }
+                { id: 'timetable', icon: 'calendar', label: 'Timetable' },
+                { id: 'materials', icon: 'book-open', label: 'Materials' }
             ];
             
             return ( 
-                <footer className="grid grid-cols-5 gap-1 p-2 border-t bg-white sticky bottom-0"> 
+                <footer className="grid grid-cols-6 gap-1 p-2 border-t bg-white sticky bottom-0"> 
                     {navItems.map(item => { 
                         const isActive = activePage === item.id; 
                         return ( 
@@ -157,7 +213,7 @@
         };
 
         //==================================
-        // DASHBOARD PAGE (Fixed for Object Data)
+        // ENHANCED DASHBOARD PAGE
         //==================================
         const DashboardPage = ({ onNavigate, currentPage }) => {
             const [dashboardStats, setDashboardStats] = useState([
@@ -167,8 +223,11 @@
                 { label: 'Upcoming Test', value: '...', color: 'red', icon: 'calendar' }
             ]);
             const [announcements, setAnnouncements] = useState([]);
+            const [upcomingEvents, setUpcomingEvents] = useState([]);
+            const [quickLinks, setQuickLinks] = useState([]);
             const [loading, setLoading] = useState(true);
             const [studentName, setStudentName] = useState('Student');
+            const [refreshing, setRefreshing] = useState(false);
             
             const studentClass = localStorage.getItem('studentClass') || '10A';
             const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
@@ -201,7 +260,7 @@
                     // Attendance
                     let attendancePercentage = '0%';
                     if (classData.attendance) {
-                        const attendanceArray = Object.values(classData.attendance); // FIX: Object to Array
+                        const attendanceArray = Object.values(classData.attendance);
                         const studentAttendance = attendanceArray.filter(a => a.student_id === studentId);
                         if (studentAttendance.length > 0) {
                             const presentDays = studentAttendance.filter(a => a.status === 'present').length;
@@ -212,7 +271,7 @@
                     // Homework (Today's Tasks)
                     let todaysTasks = 0;
                     if (classData.homework) {
-                        const homeworkArray = Object.values(classData.homework); // FIX: Object to Array
+                        const homeworkArray = Object.values(classData.homework);
                         const todayString = getTodayDateString();
                         todaysTasks = homeworkArray.filter(h => h.assigned_date === todayString).length;
                     }
@@ -248,11 +307,116 @@
                         { label: 'Upcoming Test', value: upcomingTest, color: 'red', icon: 'calendar' }
                     ]);
 
+                    // 4. Upcoming Events (Exams + Homework deadlines)
+                    const events = [];
+                    
+                    if (classData.exams) {
+                        const examsArray = Array.isArray(classData.exams) ? classData.exams : Object.values(classData.exams);
+                        const today = new Date();
+                        const nextWeek = new Date(today);
+                        nextWeek.setDate(today.getDate() + 7);
+                        
+                        examsArray.forEach(exam => {
+                            const examDate = new Date(exam.date);
+                            if (examDate >= today && examDate <= nextWeek) {
+                                events.push({
+                                    title: `${exam.subject} Exam`,
+                                    date: exam.date,
+                                    type: 'exam',
+                                    color: 'red'
+                                });
+                            }
+                        });
+                    }
+                    
+                    if (classData.homework) {
+                        const homeworkArray = Object.values(classData.homework);
+                        const today = new Date();
+                        const nextWeek = new Date(today);
+                        nextWeek.setDate(today.getDate() + 7);
+                        
+                        homeworkArray.forEach(hw => {
+                            if (hw.due_date) {
+                                const dueDate = new Date(hw.due_date);
+                                if (dueDate >= today && dueDate <= nextWeek) {
+                                    events.push({
+                                        title: `${hw.subject} Homework`,
+                                        date: hw.due_date,
+                                        type: 'homework',
+                                        color: 'blue'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Sort events by date
+                    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    setUpcomingEvents(events.slice(0, 3));
+                    
+                    // 5. Quick Links
+                    setQuickLinks([
+                        { icon: 'book-open', label: 'Study Materials', page: 'materials' },
+                        { icon: 'message-square', label: 'Messages', page: 'messages' },
+                        { icon: 'calendar', label: 'Events', page: 'events' },
+                        { icon: 'file-text', label: 'Report Card', page: 'report' }
+                    ]);
+
                 } catch (error) {
                     console.error('Error fetching dashboard data:', error);
                 } finally {
                     setLoading(false);
+                    setRefreshing(false);
                 }
+            };
+
+            // Pull to refresh effect
+            useEffect(() => {
+                let startY = 0;
+                let currentY = 0;
+                const mainElement = document.querySelector('main');
+
+                const handleTouchStart = (e) => {
+                    startY = e.touches[0].clientY;
+                };
+
+                const handleTouchMove = (e) => {
+                    if (window.scrollY === 0) {
+                        currentY = e.touches[0].clientY;
+                        const diff = currentY - startY;
+                        if (diff > 0 && diff < 100) {
+                            e.preventDefault();
+                        }
+                    }
+                };
+
+                const handleTouchEnd = (e) => {
+                    if (window.scrollY === 0 && currentY - startY > 50) {
+                        setRefreshing(true);
+                        fetchDashboardData();
+                    }
+                    startY = 0;
+                    currentY = 0;
+                };
+
+                if (mainElement) {
+                    mainElement.addEventListener('touchstart', handleTouchStart);
+                    mainElement.addEventListener('touchmove', handleTouchMove);
+                    mainElement.addEventListener('touchend', handleTouchEnd);
+                }
+
+                return () => {
+                    if (mainElement) {
+                        mainElement.removeEventListener('touchstart', handleTouchStart);
+                        mainElement.removeEventListener('touchmove', handleTouchMove);
+                        mainElement.removeEventListener('touchend', handleTouchEnd);
+                    }
+                };
+            }, []);
+
+            const handleRefresh = () => {
+                setRefreshing(true);
+                fetchDashboardData();
             };
 
             return (
@@ -262,17 +426,74 @@
                             <i data-lucide="user-circle"></i>
                         </a>
                         <h1 className="text-white text-xl font-bold">Dashboard</h1>
-                        <div className="w-6"></div>
+                        <button onClick={handleRefresh} className="text-white">
+                            <i data-lucide="refresh-ccw" className={`w-5 h-5 ${refreshing ? 'loading-spinner' : ''}`}></i>
+                        </button>
                     </header>
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {refreshing && (
+                            <div className="flex justify-center py-2">
+                                <i data-lucide="loader" className="w-5 h-5 text-blue-600 loading-spinner"></i>
+                            </div>
+                        )}
+                        
                         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg mb-6">
-                            <h2 className="text-xl font-bold">Good morning, {studentName}!</h2>
-                            <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-bold">{getTimeOfDay()}, {studentName}! {getGreetingEmoji()}</h2>
+                                    <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                </div>
+                                <div className="bg-white/20 rounded-full p-2">
+                                    <i data-lucide="calendar" className="w-6 h-6"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Quick Links Grid */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-700 mb-3">Quick Access</h3>
+                            <div className="grid grid-cols-4 gap-2">
+                                {quickLinks.map((link, index) => (
+                                    <button key={index} 
+                                            onClick={() => onNavigate(link.page)}
+                                            className="bg-white p-3 rounded-lg shadow-sm border text-center hover:shadow-md transition-shadow">
+                                        <i data-lucide={link.icon} className="w-5 h-5 mx-auto mb-1 text-blue-600"></i>
+                                        <span className="text-xs text-gray-700">{link.label}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                         
                         <h3 className="text-lg font-semibold text-gray-700 mb-3">Your Overview</h3>
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             {dashboardStats.map(stat => <StatCard key={stat.label} {...stat} />)}
+                        </div>
+                        
+                        {/* Upcoming Events Section */}
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-lg font-semibold text-gray-700">Upcoming Events</h3>
+                                <button onClick={() => onNavigate('events')} className="text-blue-600 text-sm font-medium">
+                                    View All
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                {upcomingEvents.length > 0 ? (
+                                    upcomingEvents.map((event, index) => (
+                                        <div key={index} className="bg-white p-3 rounded-lg border flex items-center">
+                                            <div className={`w-2 h-8 rounded-full mr-3 bg-${event.color}-500`}></div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-gray-800">{event.title}</p>
+                                                <p className="text-xs text-gray-500">{formatDate(event.date)}</p>
+                                            </div>
+                                            <i data-lucide={event.type === 'exam' ? 'clipboard-check' : 'book-open'} 
+                                               className={`w-4 h-4 text-${event.color}-600`}></i>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-4 text-gray-500">No upcoming events</div>
+                                )}
+                            </div>
                         </div>
                         
                         <div className="flex justify-between items-center mb-3">
@@ -294,21 +515,33 @@
         };
 
         //==================================
-        // PROFILE PAGE (Fixed Path)
+        // ENHANCED PROFILE PAGE
         //==================================
         const ProfilePage = ({ onNavigate }) => {
             const [studentData, setStudentData] = useState(null);
             const [loading, setLoading] = useState(true);
+            const [darkMode, setDarkMode] = useState(
+                localStorage.getItem('darkMode') === 'true' || 
+                window.matchMedia('(prefers-color-scheme: dark)').matches
+            );
 
             useEffect(() => {
                 fetchStudentData();
             }, []);
 
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                localStorage.setItem('darkMode', darkMode);
+            }, [darkMode]);
+
             const fetchStudentData = async () => {
                 try {
                     setLoading(true);
                     const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
-                    // Fetch direct from students node
                     const data = await fetchFromFirebase(`students/${studentId}`);
                     setStudentData(data);
                 } catch (error) {
@@ -356,6 +589,18 @@
                                             </div>
                                         )
                                     ))}
+                                    
+                                    {/* Dark Mode Toggle */}
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-500">Dark Mode</label>
+                                            <p className="text-sm text-gray-600">Toggle dark theme</p>
+                                        </div>
+                                        <button onClick={() => setDarkMode(!darkMode)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full ${darkMode ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <button onClick={handleLogout} className="w-full mt-6 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg flex items-center justify-center">
                                     <i data-lucide="log-out" className="w-5 h-5 mr-2"></i> Logout
@@ -370,7 +615,7 @@
         };
 
         //==================================
-        // ATTENDANCE PAGE (Fixed Object.values)
+        // ATTENDANCE PAGE
         //==================================
         const AttendancePage = ({ onNavigate, currentPage }) => {
             const [attendance, setAttendance] = useState([]);
@@ -394,7 +639,6 @@
                         return;
                     }
 
-                    // FIX: Convert Object to Array
                     const attendanceArray = Object.values(classData.attendance);
                     
                     const studentAttendance = attendanceArray
@@ -459,7 +703,7 @@
         };
 
         //==================================
-        // HOMEWORK PAGE (Fixed Object.values)
+        // HOMEWORK PAGE
         //==================================
         const HomeworkPage = ({ onNavigate, currentPage }) => {
             const [groupedHomework, setGroupedHomework] = useState({});
@@ -480,7 +724,6 @@
                         return;
                     }
                     
-                    // FIX: Convert Object to Array
                     const homeworkArray = Object.values(classData.homework);
                     
                     const groups = homeworkArray.reduce((acc, hw) => {
@@ -536,12 +779,14 @@
         };
 
         //==================================
-        // GRADES PAGE
+        // ENHANCED GRADES PAGE WITH TRENDS
         //==================================
         const GradesPage = ({ onNavigate, currentPage }) => {
             const [activeExam, setActiveExam] = useState('PT1');
             const [grades, setGrades] = useState({});
+            const [performanceTrends, setPerformanceTrends] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('grades');
             const examTypes = [
                 { id: 'PT1', label: 'Periodic Test 1' }, 
                 { id: 'PT2', label: 'Periodic Test 2' }, 
@@ -549,6 +794,33 @@
             ];
 
             useEffect(() => { fetchGrades(); }, []);
+
+            const calculatePerformanceTrends = (studentGrades) => {
+                const trends = [];
+                const subjects = [...new Set(studentGrades.map(g => g.subject))];
+                
+                subjects.forEach(subject => {
+                    const subjectGrades = studentGrades
+                        .filter(g => g.subject === subject && g.marks)
+                        .sort((a, b) => new Date(a.date) - new Date(b.date));
+                    
+                    if (subjectGrades.length >= 2) {
+                        const first = parseFloat(subjectGrades[0].marks);
+                        const last = parseFloat(subjectGrades[subjectGrades.length - 1].marks);
+                        const change = ((last - first) / first * 100).toFixed(1);
+                        
+                        trends.push({
+                            subject,
+                            firstGrade: subjectGrades[0].grade,
+                            latestGrade: subjectGrades[subjectGrades.length - 1].grade,
+                            change: parseFloat(change),
+                            trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
+                        });
+                    }
+                });
+                
+                setPerformanceTrends(trends);
+            };
 
             const fetchGrades = async () => {
                 try {
@@ -559,7 +831,6 @@
                     
                     if (!classData.grades) { setGrades({}); return; }
                     
-                    // Handle both Array and Object structures for Grades
                     const gradesArray = Array.isArray(classData.grades) ? classData.grades : Object.values(classData.grades);
                     const studentGrades = gradesArray.filter(grade => grade.student_id === studentId);
                     
@@ -568,7 +839,13 @@
                         organizedGrades[exam.id] = studentGrades.filter(grade => grade.exam_type === exam.id);
                     });
                     setGrades(organizedGrades);
-                } catch (error) { console.error('Error fetching grades:', error); } finally { setLoading(false); }
+                    
+                    calculatePerformanceTrends(studentGrades);
+                } catch (error) { 
+                    console.error('Error fetching grades:', error); 
+                } finally { 
+                    setLoading(false); 
+                }
             };
 
             const gradesForExam = grades[activeExam] || [];
@@ -577,37 +854,101 @@
                 <div className="w-full bg-white mobile-container flex flex-col">
                     <PageHeader title="My Grades" onBack={() => onNavigate('dashboard')} />
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                        <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
-                            {examTypes.map(exam => (
-                                <button key={exam.id} onClick={() => setActiveExam(exam.id)}
-                                    className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${activeExam === exam.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                                    {exam.label}
-                                </button>
-                            ))}
+                        {/* Tabs */}
+                        <div className="mb-6 flex border-b">
+                            <button onClick={() => setActiveTab('grades')}
+                                className={`flex-1 py-3 text-center font-medium ${activeTab === 'grades' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>
+                                Grades
+                            </button>
+                            <button onClick={() => setActiveTab('trends')}
+                                className={`flex-1 py-3 text-center font-medium ${activeTab === 'trends' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>
+                                Performance Trends
+                            </button>
                         </div>
-                        {loading ? <LoadingSpinner /> : gradesForExam.length > 0 ? (
-                            <div className="bg-white rounded-lg shadow-sm overflow-hidden border">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Subject</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Marks</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Grade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {gradesForExam.map((grade, idx) => (
-                                            <tr key={idx}>
-                                                <td className="p-3 font-medium">{grade.subject}</td>
-                                                <td className="p-3 font-bold">{grade.marks}/{grade.total_marks || 100}</td>
-                                                <td className="p-3 text-green-600 font-medium">{grade.grade}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        
+                        {activeTab === 'grades' ? (
+                            <>
+                                <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
+                                    {examTypes.map(exam => (
+                                        <button key={exam.id} onClick={() => setActiveExam(exam.id)}
+                                            className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${activeExam === exam.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                            {exam.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                {loading ? <LoadingSpinner /> : gradesForExam.length > 0 ? (
+                                    <div className="bg-white rounded-lg shadow-sm overflow-hidden border">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="p-3 text-left text-sm font-medium text-gray-500">Subject</th>
+                                                    <th className="p-3 text-left text-sm font-medium text-gray-500">Marks</th>
+                                                    <th className="p-3 text-left text-sm font-medium text-gray-500">Grade</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {gradesForExam.map((grade, idx) => {
+                                                    const gradeColor = calculateGradeColor(grade.grade);
+                                                    return (
+                                                        <tr key={idx}>
+                                                            <td className="p-3 font-medium">{grade.subject}</td>
+                                                            <td className="p-3 font-bold">{grade.marks}/{grade.total_marks || 100}</td>
+                                                            <td className={`p-3 text-${gradeColor}-600 font-medium`}>
+                                                                {grade.grade}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">No grades available for this exam.</div>
+                                )}
+                            </>
                         ) : (
-                            <div className="text-center py-6 text-gray-500">No grades available for this exam.</div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-700 mb-4">Performance Analysis</h3>
+                                {performanceTrends.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {performanceTrends.map((trend, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-lg border">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h4 className="font-semibold text-gray-800">{trend.subject}</h4>
+                                                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                        trend.trend === 'up' ? 'bg-green-100 text-green-800' :
+                                                        trend.trend === 'down' ? 'bg-red-100 text-red-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {trend.trend === 'up' ? '↑ Improving' : 
+                                                         trend.trend === 'down' ? '↓ Declining' : '→ Stable'}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">From: <span className="font-medium">{trend.firstGrade}</span></p>
+                                                        <p className="text-sm text-gray-600">To: <span className="font-medium">{trend.latestGrade}</span></p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-lg font-bold ${
+                                                            trend.change > 0 ? 'text-green-600' : 
+                                                            trend.change < 0 ? 'text-red-600' : 'text-gray-600'
+                                                        }`}>
+                                                            {trend.change > 0 ? '+' : ''}{trend.change}%
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">Change</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">
+                                        <i data-lucide="trending-up" className="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                        <p>Not enough data to show trends</p>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </main>
                     <AppFooter activePage={currentPage} onNavigate={onNavigate} />
@@ -616,55 +957,362 @@
         };
 
         //==================================
-        // TIMETABLE PAGE
+// FIXED TIMETABLE PAGE
+//==================================
+const TimetablePage = ({ onNavigate, currentPage }) => {
+    const [timetable, setTimetable] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeDay, setActiveDay] = useState('monday');
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+    useEffect(() => { 
+        console.log("Fetching timetable...");
+        fetchTimetable(); 
+    }, []);
+
+    const fetchTimetable = async () => {
+        try {
+            setLoading(true);
+            const studentClass = localStorage.getItem('studentClass') || '10A';
+            console.log("Student class:", studentClass);
+            
+            const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
+            console.log("Class data received:", classData);
+            
+            if (classData && classData.timetable) {
+                console.log("Timetable data found:", classData.timetable);
+                setTimetable(classData.timetable);
+            } else {
+                console.log("No timetable data found, using default");
+                // Create default timetable if none exists
+                const defaultTimetable = {
+                    monday: ['Math', 'Science', 'English', 'History', 'Art', 'PE'],
+                    tuesday: ['Science', 'Math', 'Geography', 'English', 'Music', 'Library'],
+                    wednesday: ['English', 'History', 'Math', 'Science', 'Computer', 'Sports'],
+                    thursday: ['Math', 'English', 'Science', 'Art', 'History', 'PE'],
+                    friday: ['Science', 'Math', 'English', 'Geography', 'Music', 'Assembly']
+                };
+                setTimetable(defaultTimetable);
+            }
+        } catch (error) { 
+            console.error('Error fetching timetable:', error); 
+            // Set default timetable on error
+            const defaultTimetable = {
+                monday: ['Math', 'Science', 'English', 'History', 'Art', 'PE'],
+                tuesday: ['Science', 'Math', 'Geography', 'English', 'Music', 'Library'],
+                wednesday: ['English', 'History', 'Math', 'Science', 'Computer', 'Sports'],
+                thursday: ['Math', 'English', 'Science', 'Art', 'History', 'PE'],
+                friday: ['Science', 'Math', 'English', 'Geography', 'Music', 'Assembly']
+            };
+            setTimetable(defaultTimetable);
+        } finally { 
+            setLoading(false); 
+        }
+    };
+
+    return (
+        <div className="w-full bg-white mobile-container flex flex-col">
+            <PageHeader title="Timetable" onBack={() => onNavigate('dashboard')} />
+            <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <LoadingSpinner />
+                        <p className="text-gray-500 mt-2">Loading timetable...</p>
+                    </div>
+                ) : timetable ? (
+                    <>
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-700 mb-3">Weekly Schedule</h3>
+                            <div className="flex overflow-x-auto pb-2 scrollbar-hide">
+                                {days.map(day => {
+                                    const hasData = timetable[day] && timetable[day].length > 0;
+                                    return (
+                                        <button key={day} onClick={() => setActiveDay(day)}
+                                            className={`px-4 py-2 rounded-full mr-2 capitalize text-sm font-medium ${activeDay === day ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                            {day.substring(0, 3)}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                            <div className="bg-gray-50 p-4 border-b">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-semibold text-gray-800 capitalize">{activeDay}</h4>
+                                    <span className="text-sm text-gray-500">
+                                        {timetable[activeDay] ? `${timetable[activeDay].length} periods` : 'No schedule'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            {timetable[activeDay] && timetable[activeDay].length > 0 ? (
+                                <div className="divide-y divide-gray-200">
+                                    {timetable[activeDay].map((subject, idx) => (
+                                        <div key={idx} className="p-4 flex items-center hover:bg-gray-50 transition-colors">
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 text-blue-600 font-bold text-sm">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-gray-800">{subject || `Period ${idx + 1}`}</p>
+                                                <div className="flex items-center mt-1">
+                                                    <span className="text-xs text-gray-500 mr-3">Period {idx + 1}</span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {idx + 8}:00 - {idx + 9}:00
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <i data-lucide="book-open" className="w-5 h-5 text-gray-400"></i>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <i data-lucide="calendar-x" className="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                    <p className="text-gray-500">No schedule for {activeDay}</p>
+                                    <p className="text-sm text-gray-400 mt-1">Check other days or contact admin</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Timetable Summary */}
+                        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center mb-2">
+                                <i data-lucide="info" className="w-5 h-5 text-blue-600 mr-2"></i>
+                                <h4 className="font-medium text-blue-800">Timetable Info</h4>
+                            </div>
+                            <p className="text-sm text-blue-700">
+                                This is your weekly class schedule. Each day shows the subjects in order of periods.
+                            </p>
+                            <div className="flex items-center mt-3 text-xs text-blue-600">
+                                <i data-lucide="clock" className="w-4 h-4 mr-1"></i>
+                                <span>School hours: 8:00 AM - 3:00 PM</span>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center py-12">
+                        <i data-lucide="calendar-off" className="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Timetable Available</h3>
+                        <p className="text-gray-500 mb-4">Your timetable hasn't been set up yet.</p>
+                        <button 
+                            onClick={fetchTimetable}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                            <i data-lucide="refresh-cw" className="w-4 h-4 mr-2"></i>
+                            Try Again
+                        </button>
+                    </div>
+                )}
+            </main>
+            <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+        </div>
+    );
+};
+
         //==================================
-        const TimetablePage = ({ onNavigate, currentPage }) => {
-            const [timetable, setTimetable] = useState({});
+        // NEW: STUDY MATERIALS PAGE
+        //==================================
+        const StudyMaterialsPage = ({ onNavigate, currentPage }) => {
+            const [materials, setMaterials] = useState([]);
+            const [filteredMaterials, setFilteredMaterials] = useState([]);
+            const [subjects, setSubjects] = useState([]);
+            const [selectedSubject, setSelectedSubject] = useState('all');
+            const [searchTerm, setSearchTerm] = useState('');
             const [loading, setLoading] = useState(true);
-            const [activeDay, setActiveDay] = useState('monday');
-            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
-            useEffect(() => { fetchTimetable(); }, []);
+            useEffect(() => {
+                fetchStudyMaterials();
+            }, []);
 
-            const fetchTimetable = async () => {
+            useEffect(() => {
+                filterMaterials();
+            }, [selectedSubject, searchTerm]);
+
+            const fetchStudyMaterials = async () => {
                 try {
                     setLoading(true);
                     const studentClass = localStorage.getItem('studentClass') || '10A';
-                    const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
-                    if (classData.timetable) setTimetable(classData.timetable);
-                } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`);
+                    
+                    if (classData && classData.study_materials) {
+                        const materialsArray = Object.values(classData.study_materials);
+                        setMaterials(materialsArray);
+                        setFilteredMaterials(materialsArray);
+                        
+                        const uniqueSubjects = [...new Set(materialsArray.map(m => m.subject))];
+                        setSubjects(uniqueSubjects);
+                    }
+                } catch (error) {
+                    console.error('Error fetching study materials:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const filterMaterials = () => {
+                let filtered = materials;
+                
+                if (selectedSubject !== 'all') {
+                    filtered = filtered.filter(m => m.subject === selectedSubject);
+                }
+                
+                if (searchTerm) {
+                    filtered = filtered.filter(m => 
+                        m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        m.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+                
+                setFilteredMaterials(filtered);
+            };
+
+            const handleDownload = (material) => {
+                alert(`Downloading ${material.title}...`);
+                if (material.url) {
+                    window.open(material.url, '_blank');
+                }
+            };
+
+            const getFileIcon = (type) => {
+                switch(type) {
+                    case 'pdf': return 'file-text';
+                    case 'video': return 'video';
+                    case 'document': return 'file';
+                    case 'presentation': return 'presentation';
+                    default: return 'file-text';
+                }
             };
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
-                    <PageHeader title="Timetable" onBack={() => onNavigate('dashboard')} />
+                    <PageHeader title="Study Materials" onBack={() => onNavigate('dashboard')} />
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                        {loading ? <LoadingSpinner /> : Object.keys(timetable).length > 0 ? (
-                            <>
-                                <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
-                                    {days.map(day => (
-                                        <button key={day} onClick={() => setActiveDay(day)}
-                                            className={`px-4 py-2 rounded-full mr-2 capitalize text-sm font-medium ${activeDay === day ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                                            {day}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="bg-white rounded-lg shadow-sm border">
-                                    <div className="bg-gray-50 p-3 border-b text-center font-semibold capitalize">{activeDay}</div>
-                                    <div className="divide-y divide-gray-200">
-                                        {timetable[activeDay]?.map((subject, idx) => (
-                                            <div key={idx} className="p-4 flex items-center">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 text-blue-600 font-bold text-sm">{idx + 1}</div>
+                        {/* Search Bar */}
+                        <div className="mb-4 relative">
+                            <input
+                                type="text"
+                                placeholder="Search materials..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full p-3 pl-10 rounded-lg border bg-white"
+                            />
+                            <i data-lucide="search" className="absolute left-3 top-3.5 w-4 h-4 text-gray-400"></i>
+                        </div>
+                        
+                        {/* Filter Section */}
+                        <div className="mb-6">
+                            <div className="flex overflow-x-auto pb-2 scrollbar-hide">
+                                <button onClick={() => setSelectedSubject('all')}
+                                    className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${selectedSubject === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                    All Subjects
+                                </button>
+                                {subjects.map(subject => (
+                                    <button key={subject} onClick={() => setSelectedSubject(subject)}
+                                        className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${selectedSubject === subject ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                        {subject}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {loading ? <LoadingSpinner /> : filteredMaterials.length > 0 ? (
+                            <div className="space-y-3">
+                                {filteredMaterials.map((material, index) => (
+                                    <div key={index} className="bg-white p-4 rounded-lg border shadow-sm">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-start">
+                                                <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                                    <i data-lucide={getFileIcon(material.type)} className="w-5 h-5 text-blue-600"></i>
+                                                </div>
                                                 <div>
-                                                    <p className="font-medium text-gray-800">{subject}</p>
-                                                    <p className="text-xs text-gray-500">Period {idx + 1}</p>
+                                                    <h4 className="font-semibold text-gray-800">{material.title}</h4>
+                                                    <div className="flex items-center mt-1">
+                                                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
+                                                            {material.subject}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500 capitalize">{material.type || 'document'}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-3">{material.description}</p>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-gray-400">
+                                                Uploaded: {formatDate(material.uploaded_date)}
+                                            </span>
+                                            <button onClick={() => handleDownload(material)}
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm flex items-center">
+                                                <i data-lucide="download" className="w-4 h-4 mr-1"></i>
+                                                Download
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </>
-                        ) : <div className="text-center py-6 text-gray-500">No timetable available.</div>}
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">
+                                <i data-lucide="folder-open" className="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                <p>No study materials found</p>
+                                {searchTerm && <p className="text-sm mt-2">Try a different search term</p>}
+                            </div>
+                        )}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // NEW: MESSAGES PAGE (Placeholder)
+        //==================================
+        const MessagesPage = ({ onNavigate, currentPage }) => {
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Messages" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="text-center py-12">
+                            <i data-lucide="message-square" className="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">Messages Coming Soon</h3>
+                            <p className="text-gray-500">Direct messaging feature will be available soon!</p>
+                        </div>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // NEW: EVENTS PAGE (Placeholder)
+        //==================================
+        const EventsPage = ({ onNavigate, currentPage }) => {
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Events" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="text-center py-12">
+                            <i data-lucide="calendar-days" className="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">Events Calendar Coming Soon</h3>
+                            <p className="text-gray-500">School events calendar will be available soon!</p>
+                        </div>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // NEW: REPORT CARD PAGE (Placeholder)
+        //==================================
+        const ReportCardPage = ({ onNavigate, currentPage }) => {
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Report Card" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="text-center py-12">
+                            <i data-lucide="file-text" className="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">Report Cards Coming Soon</h3>
+                            <p className="text-gray-500">Detailed report cards will be available soon!</p>
+                        </div>
                     </main>
                     <AppFooter activePage={currentPage} onNavigate={onNavigate} />
                 </div>
@@ -704,7 +1352,11 @@
                 attendance: <AttendancePage onNavigate={navigate} currentPage={currentPage} />,
                 grades: <GradesPage onNavigate={navigate} currentPage={currentPage} />,
                 homework: <HomeworkPage onNavigate={navigate} currentPage={currentPage} />,
-                timetable: <TimetablePage onNavigate={navigate} currentPage={currentPage} />
+                timetable: <TimetablePage onNavigate={navigate} currentPage={currentPage} />,
+                materials: <StudyMaterialsPage onNavigate={navigate} currentPage={currentPage} />,
+                messages: <MessagesPage onNavigate={navigate} currentPage={currentPage} />,
+                events: <EventsPage onNavigate={navigate} currentPage={currentPage} />,
+                report: <ReportCardPage onNavigate={navigate} currentPage={currentPage} />
             };
 
             return <div>{pages[currentPage] || pages['dashboard']}</div>;
