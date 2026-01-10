@@ -1,295 +1,1088 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Login - EduFlow</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduFlow - Teacher Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Add Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
-  <style>
-    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #F3F4F6; overflow: hidden; }
-    .mobile-container { max-width: 420px; height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-    #splash-screen { animation: fadeOut 0.5s ease-out 2s forwards; }
-    .splash-logo { animation: pulse 1.5s ease-in-out infinite, zoomIn 1s ease-out; }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
-    .notification { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; }
-    .notification.success { background-color: #10B981; }
-    .notification.error { background-color: #EF4444; }
-    .notification.show { transform: translateX(0); }
-  </style>
+    <style>
+        :root { 
+            --brand-blue: #3B82F6;
+            --success-green: #10B981;
+            --warning-orange: #F59E0B;
+            --danger-red: #EF4444;
+            --info-cyan: #06B6D4;
+            --dark-mode: #1F2937;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #F3F4F6; 
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .mobile-container { 
+            max-width: 420px; 
+            min-height: 100vh; 
+            margin: 0 auto; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+            background-color: white;
+            transition: background-color 0.3s;
+        }
+        
+        /* ========== DARK MODE FIXES ========== */
+        body.dark-mode {
+            background-color: #111827 !important;
+        }
+        
+        body.dark-mode .mobile-container {
+            background-color: #1F2937 !important;
+            color: #E5E7EB !important;
+        }
+        
+        body.dark-mode .bg-white {
+            background-color: #374151 !important;
+        }
+        
+        body.dark-mode .text-gray-800,
+        body.dark-mode .text-gray-700 {
+            color: #E5E7EB !important;
+        }
+        
+        body.dark-mode .text-gray-600,
+        body.dark-mode .text-gray-500 {
+            color: #9CA3AF !important;
+        }
+        
+        body.dark-mode .bg-gray-50 {
+            background-color: #1F2937 !important;
+        }
+        
+        body.dark-mode .border {
+            border-color: #4B5563 !important;
+        }
+        
+        body.dark-mode .modal-content {
+            background-color: #374151 !important;
+            color: #E5E7EB !important;
+        }
+        
+        body.dark-mode footer {
+            background-color: #374151 !important;
+            border-top-color: #4B5563 !important;
+        }
+        /* ========== END DARK MODE ========== */
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .attendance-present { background-color: #DCFCE7; color: #166534; }
+        .attendance-absent { background-color: #FEE2E2; color: #991B1B; }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        /* Priority Tags */
+        .priority-low { background-color: #D1FAE5; color: #065F46; }
+        .priority-medium { background-color: #FEF3C7; color: #92400E; }
+        .priority-high { background-color: #FEE2E2; color: #991B1B; }
+        .priority-urgent { 
+            background-color: #FEE2E2; 
+            color: #991B1B; 
+            animation: pulse 2s infinite; 
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        /* Quick Action Button */
+        .quick-action-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            z-index: 40;
+        }
+        
+        /* Achievement Badge */
+        .achievement-badge {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+    </style>
 </head>
 <body>
-  <div id="splash-screen" class="fixed top-0 left-0 w-full h-full bg-white flex justify-center items-center z-50">
-    <img src="images/logo.png" alt="School Logo" class="splash-logo w-[150px] h-[150px] rounded-full">
-  </div>
+    <div id="root"></div>
 
-  <div id="notification" class="notification"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
 
-  <div id="login-page" class="min-h-screen flex items-center justify-center" style="display:none;">
-    <div class="w-full bg-white mobile-container flex flex-col">
-      <!-- Updated Header with Back Button -->
-      <header class="flex items-center justify-between p-6 shadow-md bg-blue-600 relative">
-        <button id="backButton" class="text-white hover:text-gray-200 transition-colors p-2 -ml-2">
-          <i data-lucide="arrow-left" class="w-6 h-6"></i>
-        </button>
-        <h1 class="text-white text-2xl font-bold absolute left-1/2 transform -translate-x-1/2">EduFlow</h1>
-      </header>
-      
-      <main class="flex-1 p-6 overflow-y-auto bg-gray-50 flex flex-col justify-center">
-        <div class="text-center mb-8">
-          <img src="images/logo.png" alt="School Logo" class="w-20 h-20 mx-auto mb-4 rounded-full">
-          <h2 class="text-2xl font-semibold text-gray-800">Partap School</h2>
-          <p class="text-gray-500">Teacher Portal</p>
-        </div>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1jyfjfNrBAKSIFPFF5rgZEwzlJeLoqjA",
+            authDomain: "qwerty1-6fc97.firebaseapp.com",
+            databaseURL: "https://qwerty1-6fc97-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "qwerty1-6fc97",
+            storageBucket: "qwerty1-6fc97.appspot.com",
+            messagingSenderId: "334235813327",
+            appId: "1:334235813327:web:95d7e601403f60f0413eba",
+            measurementId: "G-C4W4SC89NH"
+        };
 
-        <form id="loginForm" class="space-y-6">
-          <div>
-            <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">Teacher ID</label>
-            <input type="text" id="userId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., T001">
-          </div>
+        // Initialize Firebase
+        let database;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            } else {
+                firebase.app();
+            }
+            database = firebase.database();
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
 
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <div class="relative">
-              <input type="password" id="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg pr-10">
-              <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500">
-                <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
-                <i data-lucide="eye-off" id="eye-off-icon" class="w-5 h-5 hidden"></i>
-              </button>
+        // ===================================
+        // DARK MODE MANAGER (FIXED)
+        // ===================================
+        const DarkModeManager = {
+            init() {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                this.applyTheme(savedTheme);
+            },
+            
+            applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
+                localStorage.setItem('theme', theme);
+            },
+            
+            toggle() {
+                const isDark = document.body.classList.contains('dark-mode');
+                this.applyTheme(isDark ? 'light' : 'dark');
+                
+                // Show notification
+                const message = isDark ? '☀️ Light mode enabled' : '🌙 Dark mode enabled';
+                this.showToast(message);
+            },
+            
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 2000);
+            },
+            
+            isDarkMode() {
+                return document.body.classList.contains('dark-mode');
+            }
+        };
+
+        // Initialize dark mode on load
+        DarkModeManager.init();
+
+        // ===================================
+        // UTILITY FUNCTIONS
+        // ===================================
+        const formatDate = (dateString) => {
+            if (!dateString) return 'None';
+            try {
+                if (new Date(dateString).toString() === 'Invalid Date') return dateString;
+                const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            } catch (e) {
+                return dateString;
+            }
+        };
+
+        const getTodayDateString = () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Firebase database READ function
+        const fetchFromFirebase = async (path) => {
+            try {
+                console.log(`Fetching from Firebase: ${path}`);
+                const snapshot = await database.ref(path).once('value');
+                const data = snapshot.val();
+                console.log(`Firebase data received for ${path}:`, data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching from Firebase:', error);
+                return null;
+            }
+        };
+        
+        // Firebase database WRITE function
+        const writeToFirebase = async (path, data) => {
+            try {
+                console.log(`Writing to Firebase: ${path}`, data);
+                await database.ref(path).set(data);
+                console.log("Write successful");
+                return true;
+            } catch (error) {
+                console.error('Error writing to Firebase:', error);
+                return false;
+            }
+        };
+
+        // ===================================
+        // REUSABLE COMPONENTS
+        // ===================================
+        const LoadingSpinner = () => (
+            <div className="flex justify-center items-center py-4">
+                <i data-lucide="loader" className="w-6 h-6 text-blue-600 loading-spinner"></i>
             </div>
-          </div>
+        );
 
-          <div class="flex items-center">
-            <input id="rememberMe" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-            <label for="rememberMe" class="ml-2 block text-sm text-gray-700">Remember Me</label>
-          </div>
+        const PageHeader = ({ title, onBack, showBackButton = true, rightAction }) => (
+            <header className="flex items-center p-4 shadow-md" style={{ backgroundColor: 'var(--brand-blue)' }}>
+                {showBackButton && (
+                    <a href="#" onClick={(e) => { e.preventDefault(); onBack(); }} className="text-white">
+                        <i data-lucide="arrow-left"></i>
+                    </a>
+                )}
+                <h1 className="text-white text-xl font-bold ml-4 flex-1">{title}</h1>
+                {rightAction && rightAction}
+            </header>
+        );
 
-          <button type="submit" id="loginButton" class="w-full flex justify-center py-3 px-4 rounded-lg text-white bg-blue-600 hover:bg-blue-700">
-            <span id="buttonText">Teacher Sign In</span>
-            <div id="spinner" class="hidden animate-spin ml-2">
-              <i data-lucide="loader" class="w-5 h-5"></i>
+        const StatCard = ({ label, value, color, icon, onClick }) => (
+            <div 
+                className={`bg-${color}-100 p-4 rounded-lg text-center ${onClick ? 'cursor-pointer hover:opacity-90' : ''}`}
+                onClick={onClick}
+            >
+                {icon && <i data-lucide={icon} className={`w-6 h-6 mx-auto mb-2 text-${color}-600`}></i>}
+                <p className={`text-sm text-${color}-800`}>{label}</p>
+                <p className={`text-2xl font-bold text-${color}-900`}>{value}</p>
             </div>
-          </button>
-        </form>
+        );
 
-        <div class="text-center mt-4">
-          <a href="#" id="forgotPassword" class="text-sm text-blue-600 hover:underline">Forgot Password?</a>
-        </div>
-      </main>
-    </div>
-  </div>
+        const AnnouncementCard = ({ title, content, date, target, priority = 'low' }) => {
+            const priorityColors = {
+                low: 'priority-low',
+                medium: 'priority-medium',
+                high: 'priority-high',
+                urgent: 'priority-urgent'
+            };
+            
+            return (
+                <div className="bg-white p-4 rounded-lg shadow-sm border fade-in">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center space-x-2">
+                            <h4 className="font-semibold text-gray-800">{title}</h4>
+                            <span className={`text-xs px-2 py-1 rounded-full ${priorityColors[priority]}`}>
+                                {priority}
+                            </span>
+                        </div>
+                        {target && target !== 'all' && (
+                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{target}</span>
+                        )}
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{content}</p>
+                    <p className="text-xs text-gray-400 mt-2">{formatDate(date)}</p>
+                </div>
+            );
+        };
 
-  <script>
-    lucide.createIcons();
-    
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyD1jyfjfNrBAKSIFPFF5rgZEwzlJeLoqjA",
-      authDomain: "qwerty1-6fc97.firebaseapp.com",
-      databaseURL: "https://qwerty1-6fc97-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "qwerty1-6fc97",
-      storageBucket: "qwerty1-6fc97.appspot.com",
-      messagingSenderId: "334235813327",
-      appId: "1:334235813327:web:95d7e601403f60f0413eba",
-      measurementId: "G-C4W4SC89NH"
-    };
+        // ===================================
+        // FOOTER COMPONENT
+        // ===================================
+        const AppFooter = ({ activePage, onNavigate }) => {
+            useEffect(() => { 
+                if (window.lucide) {
+                    lucide.createIcons(); 
+                }
+            }, [activePage]);
+            
+            const navItems = [ 
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
+                { id: 'classes', icon: 'users', label: 'Classes' },
+                { id: 'attendance', icon: 'user-check', label: 'Attendance' }, 
+                { id: 'homework', icon: 'notebook-pen', label: 'Homework' },
+                { id: 'timetable', icon: 'calendar', label: 'Timetable' }
+            ];
+            
+            return ( 
+                <footer className="grid grid-cols-5 gap-1 p-2 border-t bg-white sticky bottom-0"> 
+                    {navItems.map(item => { 
+                        const isActive = activePage === item.id; 
+                        return ( 
+                            <a 
+                                href="#" 
+                                key={item.id} 
+                                onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
+                                className={`flex flex-col items-center p-2 rounded-lg ${isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
+                            > 
+                                <i data-lucide={item.icon} className="w-5 h-5"></i>
+                                <span className="text-xs mt-1">{item.label}</span> 
+                            </a> 
+                        ); 
+                    })} 
+                </footer> 
+            );
+        };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
+        // ===================================
+        // ANALYTICS PAGE (FIXED NAVIGATION)
+        // ===================================
+        const AnalyticsPage = ({ onNavigate }) => {
+            const chartRef = useRef(null);
+            
+            useEffect(() => {
+                if (chartRef.current) {
+                    const ctx = chartRef.current.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                            datasets: [{
+                                label: 'Student Attendance %',
+                                data: [85, 92, 78, 95, 88],
+                                backgroundColor: '#3B82F6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                }
+            }, []);
+            
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Analytics Dashboard" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <StatCard label="Avg Attendance" value="87.6%" color="blue" icon="user-check" />
+                            <StatCard label="Homework Done" value="92%" color="green" icon="clipboard-check" />
+                            <StatCard label="Active Students" value="45" color="yellow" icon="users" />
+                            <StatCard label="Engagement" value="8.5/10" color="red" icon="trending-up" />
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-lg border mb-6">
+                            <h3 className="font-semibold text-gray-800 mb-4">Weekly Attendance Trend</h3>
+                            <canvas ref={chartRef} height="200"></canvas>
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-lg border">
+                            <h3 className="font-semibold text-gray-800 mb-3">Quick Insights</h3>
+                            <ul className="space-y-2">
+                                <li className="flex items-center text-sm">
+                                    <i data-lucide="check-circle" className="w-4 h-4 text-green-500 mr-2"></i>
+                                    <span>Attendance improved by 5% this week</span>
+                                </li>
+                                <li className="flex items-center text-sm">
+                                    <i data-lucide="alert-circle" className="w-4 h-4 text-yellow-500 mr-2"></i>
+                                    <span>2 students need attention (low attendance)</span>
+                                </li>
+                                <li className="flex items-center text-sm">
+                                    <i data-lucide="lightbulb" className="w-4 h-4 text-blue-500 mr-2"></i>
+                                    <span>Homework completion rate is excellent</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
 
-    // Show login after splash
-    setTimeout(() => {
-      document.getElementById('login-page').style.display = 'flex';
-    }, 2000);
+        // ===================================
+        // DASHBOARD PAGE (WITH FIXED BUTTONS)
+        // ===================================
+        const DashboardPage = ({ onNavigate, currentPage }) => {
+            const [dashboardStats, setDashboardStats] = useState([
+                { label: 'My Classes', value: '...', color: 'blue', icon: 'users' },
+                { label: 'Students', value: '...', color: 'green', icon: 'user-check' },
+                { label: 'Pending Tasks', value: '...', color: 'yellow', icon: 'clipboard-list' },
+                { label: 'Today\'s Classes', value: '...', color: 'red', icon: 'calendar' }
+            ]);
+            const [announcements, setAnnouncements] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [teacherName, setTeacherName] = useState('Teacher');
+            const teacherId = localStorage.getItem('teacherId') || 'T001';
 
-    const loginForm = document.getElementById('loginForm');
-    const loginButton = document.getElementById('loginButton');
-    const buttonText = document.getElementById('buttonText');
-    const spinner = document.getElementById('spinner');
+            useEffect(() => {
+                fetchDashboardData();
+            }, []);
 
-    function showNotification(message, type = 'success') {
-      const notification = document.getElementById('notification');
-      notification.textContent = message;
-      notification.className = `notification ${type}`;
-      notification.classList.add('show');
-      setTimeout(() => notification.classList.remove('show'), 3000);
-    }
+            const fetchDashboardData = async () => {
+                try {
+                    setLoading(true);
+                    
+                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    
+                    if (teacherData && teacherData.name) {
+                        setTeacherName(teacherData.name);
+                        localStorage.setItem('loggedInUserName', teacherData.name);
+                    }
+                    
+                    const announcementsData = await fetchFromFirebase('announcements/announcements');
+                    const allAnnouncements = announcementsData || [];
+                    
+                    const filteredAnnouncements = allAnnouncements
+                        .filter(ann => ann.target_audience === 'all' || ann.target_audience === 'teachers')
+                        .slice(0, 3);
+                    
+                    setAnnouncements(filteredAnnouncements);
 
-    // Function to validate teacher ID
-    function isValidTeacherId(username) {
-      const normalizedUsername = username.toUpperCase().trim();
-      // Teacher pattern: T followed by digits (e.g., T001, T123)
-      return /^T\d+$/.test(normalizedUsername);
-    }
+                    const teacherClasses = teacherData?.classes || [];
+                    
+                    let totalStudents = 0;
+                    let todaysClasses = 0;
+                    let pendingTasks = 0;
+                    
+                    const allStudents = await fetchFromFirebase('students');
 
-    // Function to fetch teacher data from Firebase
-    async function fetchTeacherData(username) {
-      try {
-        console.log("Fetching teacher data for:", username);
-        
-        // NEW: Query the specific teacher node directly from the 'teachers' root
-        const teacherSnapshot = await database.ref(`teachers/${username}`).once('value');
-        let teacherData = teacherSnapshot.val();
-        
-        if (!teacherData) {
-          console.log("Teacher data not found, using demo data");
-          // Use demo data as fallback
-          teacherData = {
-            teacher_id: username,
-            name: "Priya Sharma",
-            classes: ["10A", "10B"],
-            subjects: ["Mathematics", "Physics"],
-            role: "teacher",
-            email: `${username.toLowerCase()}@psmkkd.com`,
-            phone: "9876543210",
-            qualification: "M.Sc., B.Ed.",
-            experience: "8 years"
-          };
-        } else {
-            // Ensure role is set for login logic if needed
-            teacherData.role = "teacher";
-        }
-        
-        return teacherData;
-      } catch (error) {
-        console.error("Error fetching teacher data:", error);
-        throw error;
-      }
-    }
+                    for (const classCode of teacherClasses) {
+                        const classData = await fetchFromFirebase(`classes/${classCode}`);
+                        if (classData) {
+                            if (allStudents) {
+                                totalStudents += Object.values(allStudents).filter(s => s.class === classCode).length;
+                            }
+                            
+                            if (classData.timetable) {
+                                const dayOfWeek = new Date().getDay();
+                                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                                const todayKey = days[dayOfWeek];
+                                if(classData.timetable[todayKey]) {
+                                    todaysClasses += classData.timetable[todayKey].length;
+                                }
+                            }
+                            
+                            if (classData.homework) {
+                                const homeworkArray = Object.values(classData.homework);
+                                pendingTasks += homeworkArray.filter(h => new Date(h.due_date) <= new Date()).length;
+                            }
+                        }
+                    }
 
-    // Auto-fill if Remember Me was set
-    window.addEventListener("DOMContentLoaded", () => {
-      const savedUserId = localStorage.getItem("savedTeacherId");
-      const savedPassword = localStorage.getItem("savedTeacherPassword");
-      if (savedUserId && savedPassword) {
-        document.getElementById("userId").value = savedUserId;
-        document.getElementById("password").value = savedPassword;
-        document.getElementById("rememberMe").checked = true;
-      }
-    });
+                    const updatedStats = [
+                        { label: 'My Classes', value: teacherClasses.length, color: 'blue', icon: 'users' },
+                        { label: 'Students', value: totalStudents, color: 'green', icon: 'user-check' },
+                        { label: 'Pending Tasks', value: pendingTasks, color: 'yellow', icon: 'clipboard-list' },
+                        { label: 'Today\'s Classes', value: todaysClasses, color: 'red', icon: 'calendar' }
+                    ];
 
-    // Back button functionality - Redirect to main website homepage
-    document.getElementById('backButton').addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Go back to the main website homepage (one level up from teacher folder)
-      window.location.href = '../index.html';
-    });
+                    setDashboardStats(updatedStats);
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-    // Firebase Login Logic
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      loginButton.disabled = true;
-      buttonText.textContent = 'Authenticating...';
-      spinner.classList.remove('hidden');
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    {/* HEADER WITH FIXED BUTTONS */}
+                    <header className="flex items-center justify-between p-4 shadow-md" style={{ backgroundColor: 'var(--brand-blue)' }}>
+                        <div className="flex items-center space-x-2">
+                            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('profile'); }} className="text-white">
+                                <i data-lucide="user-circle"></i>
+                            </a>
+                            <button 
+                                onClick={() => DarkModeManager.toggle()}
+                                className="text-white p-1"
+                                title="Toggle dark mode"
+                            >
+                                <i data-lucide="sun-moon" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <h1 className="text-white text-xl font-bold">Dashboard</h1>
+                        <div className="flex items-center space-x-3">
+                            <button 
+                                onClick={() => onNavigate('analytics')}
+                                className="text-white p-1"
+                                title="View Analytics"
+                            >
+                                <i data-lucide="bar-chart-3" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg mb-6">
+                            <h2 className="text-xl font-bold">Good morning, {teacherName}!</h2>
+                            <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { 
+                                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' 
+                            })}</p>
+                        </div>
+                        
+                        <h3 className="text-lg font-semibold text-gray-700 mb-3">Your Overview</h3>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            {dashboardStats.map(stat => (
+                                <StatCard 
+                                    key={stat.label} 
+                                    {...stat} 
+                                    onClick={() => {
+                                        if (stat.label === 'My Classes') onNavigate('classes');
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div 
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-lg text-center cursor-pointer hover:opacity-90"
+                                onClick={() => onNavigate('analytics')}
+                            >
+                                <i data-lucide="bar-chart-3" className="w-8 h-8 mx-auto mb-2"></i>
+                                <p className="font-semibold">Analytics</p>
+                                <p className="text-sm opacity-90">View insights</p>
+                            </div>
+                            <div 
+                                className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 rounded-lg text-center cursor-pointer hover:opacity-90"
+                                onClick={() => alert('Resource Library coming soon!')}
+                            >
+                                <i data-lucide="folder-open" className="w-8 h-8 mx-auto mb-2"></i>
+                                <p className="font-semibold">Resources</p>
+                                <p className="text-sm opacity-90">Library</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-700">Recent Announcements</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {loading ? <LoadingSpinner /> : announcements.length > 0 ? (
+                                announcements.map(item => (
+                                    <AnnouncementCard 
+                                        key={item.id} 
+                                        title={item.title} 
+                                        content={item.content} 
+                                        date={item.created_at}
+                                        target={item.target_audience}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-4 text-gray-500">No announcements found</div>
+                            )}
+                        </div>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
 
-      const username = document.getElementById('userId').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const rememberMe = document.getElementById('rememberMe').checked;
+        // ===================================
+        // PROFILE PAGE (FIXED: Added back button in header)
+        // ===================================
+        const ProfilePage = ({ onNavigate }) => {
+            const [teacherData, setTeacherData] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-      // Validate teacher ID format
-      if (!isValidTeacherId(username)) {
-        showNotification('Please enter a valid teacher ID (e.g., T001)', 'error');
-        loginButton.disabled = false;
-        buttonText.textContent = 'Teacher Sign In';
-        spinner.classList.add('hidden');
-        return;
-      }
+            useEffect(() => {
+                fetchTeacherData();
+            }, []);
 
-      try {
-        const teacherEmail = `${username.toLowerCase()}@psmkkd.com`;
+            const fetchTeacherData = async () => {
+                try {
+                    setLoading(true);
+                    const teacherId = localStorage.getItem('teacherId') || 'T001';
+                    const data = await fetchFromFirebase(`teachers/${teacherId}`);
+                    setTeacherData(data);
+                } catch (error) {
+                    console.error('Error fetching teacher data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-        // Sign in using Firebase Authentication
-        const userCredential = await auth.signInWithEmailAndPassword(teacherEmail, password);
-        const user = userCredential.user;
-        
-        // Fetch teacher data from Firebase
-        const teacherData = await fetchTeacherData(username);
-        
-        // Set localStorage items for teacher
-        localStorage.setItem('loggedInUserId', user.uid);
-        localStorage.setItem('username', username);
-        localStorage.setItem('loggedInUserName', teacherData.name);
-        localStorage.setItem('loggedInUserEmail', teacherData.email);
-        localStorage.setItem('userType', 'teacher');
-        localStorage.setItem('teacherId', teacherData.teacher_id || username);
-        
-        // Store teacher-specific data
-        if (teacherData.classes) {
-          localStorage.setItem('teacherClasses', JSON.stringify(teacherData.classes));
-        }
-        if (teacherData.subjects) {
-          localStorage.setItem('teacherSubjects', JSON.stringify(teacherData.subjects));
-        }
-        if (teacherData.phone) {
-          localStorage.setItem('teacherPhone', teacherData.phone);
-        }
-        if (teacherData.qualification) {
-          localStorage.setItem('teacherQualification', teacherData.qualification);
-        }
-        if (teacherData.experience) {
-          localStorage.setItem('teacherqualitfication', teacherData.experience);
-        }
-        
-        if (rememberMe) {
-            localStorage.setItem("savedTeacherId", username);
-            localStorage.setItem("savedTeacherPassword", password);
-        } else {
-            localStorage.removeItem("savedTeacherId");
-            localStorage.removeItem("savedTeacherPassword");
-        }
+            const handleLogout = () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                }
+            };
 
-        showNotification('Teacher login successful! Redirecting...', 'success');
-        setTimeout(() => {
-            window.location.href = 'teacher.html';
-        }, 1500);
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    {/* FIX: Added PageHeader with back button */}
+                    <PageHeader title="My Profile" onBack={() => onNavigate('dashboard')} />
+                    
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? (
+                            <LoadingSpinner />
+                        ) : teacherData ? (
+                            <>
+                                <div className="bg-white rounded-xl shadow-sm p-6 mb-6 text-center border">
+                                    <i data-lucide="user-circle" className="w-24 h-24 mx-auto mb-4 text-gray-300"></i>
+                                    <h2 className="text-2xl font-bold text-gray-800">{teacherData.name || 'None'}</h2>
+                                    <p className="text-gray-500">Teacher - {teacherData.subject || 'N/A'}</p>
+                                </div>
+                                <div className="bg-white rounded-xl shadow-sm p-6 border text-gray-800">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-500">Teacher ID</label>
+                                            <p className="font-semibold">{localStorage.getItem('teacherId') || 'None'}</p>
+                                        </div>
+                                        <div className="border-t"></div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-500">Email</label>
+                                            <p className="font-semibold">{teacherData.email || 'None'}</p>
+                                        </div>
+                                        <div className="border-t"></div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-500">Subject</label>
+                                            <p className="font-semibold">{teacherData.subject || 'None'}</p>
+                                        </div>
+                                        <div className="border-t"></div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-500">Classes</label>
+                                            <p className="font-semibold">{teacherData.classes ? teacherData.classes.join(', ') : 'None'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={handleLogout} className="w-full mt-6 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="log-out" className="w-5 h-5 mr-2"></i> Logout
+                                </button>
+                            </>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">
+                                <p className="mt-2">Teacher data not found.</p>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
 
-      } catch (error) {
-        console.error("Firebase Login Error:", error.message);
-        
-        let errorMessage = 'Invalid Teacher ID or Password.';
-        if (error.code === 'auth/user-not-found') {
-          errorMessage = 'No teacher account found with this ID.';
-        } else if (error.code === 'auth/wrong-password') {
-          errorMessage = 'Incorrect password. Please try again.';
-        } else if (error.code === 'auth/invalid-email') {
-          errorMessage = 'Invalid teacher ID format.';
-        }
-        
-        showNotification(errorMessage, 'error');
-        loginButton.disabled = false;
-        buttonText.textContent = 'Teacher Sign In';
-        spinner.classList.add('hidden');
-      }
-    });
+        // ===================================
+        // CLASSES PAGE (FIXED: Properly reading classes data)
+        // ===================================
+        const ClassesPage = ({ onNavigate, currentPage }) => {
+            const [classes, setClasses] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
 
-    document.getElementById('getpassword').addEventListener('click', (e) => {
-      e.preventDefault();
-      showNotification('Please contact the school administrator to reset your password.', 'error');
-    });
+            useEffect(() => {
+                fetchClasses();
+            }, []);
 
-    // --- Logic for password eye toggle ---
-    const togglePasswordButton = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eye-icon');
-    const eyeOffIcon = document.getElementById('eye-off-icon');
+            const fetchClasses = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const teacherId = localStorage.getItem('teacherId') || 'T001';
+                    console.log(`Fetching teacher data for ID: ${teacherId}`);
+                    
+                    // First, get teacher data
+                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    console.log('Teacher data:', teacherData);
+                    
+                    if (!teacherData) {
+                        setError('Teacher data not found');
+                        setClasses([]);
+                        return;
+                    }
+                    
+                    const teacherClasses = teacherData.classes;
+                    console.log('Teacher classes array:', teacherClasses);
+                    
+                    if (!teacherClasses || !Array.isArray(teacherClasses) || teacherClasses.length === 0) {
+                        setClasses([]);
+                        return;
+                    }
+                    
+                    // Fetch details for each class
+                    const classDetails = [];
+                    for (const classCode of teacherClasses) {
+                        console.log(`Fetching class data for: ${classCode}`);
+                        const classData = await fetchFromFirebase(`classes/${classCode}`);
+                        console.log(`Class data for ${classCode}:`, classData);
+                        
+                        if (classData) {
+                            classDetails.push({
+                                code: classCode,
+                                name: classData.name || `Class ${classCode}`,
+                                subject: classData.subject || 'General',
+                                students: classData.students || 0
+                            });
+                        } else {
+                            // If class data not found, still add basic info
+                            classDetails.push({
+                                code: classCode,
+                                name: `Class ${classCode}`,
+                                subject: 'General',
+                                students: 0
+                            });
+                        }
+                    }
+                    
+                    console.log('Final class details:', classDetails);
+                    setClasses(classDetails);
+                } catch (error) {
+                    console.error('Error fetching classes:', error);
+                    setError('Failed to load classes data');
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-    togglePasswordButton.addEventListener('click', () => {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      eyeIcon.classList.toggle('hidden');
-      eyeOffIcon.classList.toggle('hidden');
-    });
-  </script>
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="My Classes" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? (
+                            <LoadingSpinner />
+                        ) : error ? (
+                            <div className="text-center py-6 text-red-500">
+                                <i data-lucide="alert-circle" className="w-12 h-12 mx-auto text-red-400"></i>
+                                <p className="mt-2 font-medium">{error}</p>
+                                <button 
+                                    onClick={fetchClasses}
+                                    className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : classes.length > 0 ? (
+                            <div className="space-y-4">
+                                {classes.map(classItem => (
+                                    <div 
+                                        key={classItem.code} 
+                                        className="bg-white p-4 rounded-lg border fade-in"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h3 className="font-bold text-gray-800 text-lg">{classItem.name}</h3>
+                                                <p className="text-sm text-gray-600">{classItem.subject}</p>
+                                            </div>
+                                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                {classItem.students} students
+                                            </span>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <button 
+                                                onClick={() => onNavigate('attendance', { classCode: classItem.code })}
+                                                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center"
+                                            >
+                                                <i data-lucide="user-check" className="w-4 h-4 mr-1"></i> Attendance
+                                            </button>
+                                            <button 
+                                                onClick={() => onNavigate('homework', { classCode: classItem.code })}
+                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center"
+                                            >
+                                                <i data-lucide="notebook-pen" className="w-4 h-4 mr-1"></i> Homework
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">
+                                <i data-lucide="users" className="w-12 h-12 mx-auto text-gray-400"></i>
+                                <p className="mt-2">No classes assigned to you.</p>
+                                <p className="text-sm mt-1">Please contact administrator to assign classes.</p>
+                            </div>
+                        )}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        // ===================================
+        // ATTENDANCE PAGE
+        // ===================================
+        const AttendancePage = ({ onNavigate, currentPage, classCode: initialClassCode }) => {
+            const [classes, setClasses] = useState([]);
+            const [selectedClass, setSelectedClass] = useState(initialClassCode || '');
+
+            useEffect(() => {
+                fetchTeacherClasses();
+            }, []);
+
+            const fetchTeacherClasses = async () => {
+                try {
+                    const teacherId = localStorage.getItem('teacherId') || 'T001';
+                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    
+                    if (teacherData && teacherData.classes) {
+                        setClasses(teacherData.classes);
+                        
+                        if (!selectedClass && teacherData.classes.length > 0) {
+                            setSelectedClass(teacherData.classes[0]);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching teacher classes:', error);
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Attendance" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select 
+                                value={selectedClass}
+                                onChange={(e) => setSelectedClass(e.target.value)}
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                            >
+                                {classes.map(classCode => (
+                                    <option key={classCode} value={classCode}>Class {classCode}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="text-center py-6 text-gray-500">
+                            <i data-lucide="user-check" className="w-12 h-12 mx-auto text-gray-400"></i>
+                            <p className="mt-2">Attendance feature loaded for Class {selectedClass}</p>
+                        </div>
+                        
+                        <button 
+                            onClick={() => onNavigate('markAttendance', { classCode: selectedClass })}
+                            className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg flex items-center justify-center"
+                        >
+                            <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Mark Today's Attendance
+                        </button>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        // ===================================
+        // HOMEWORK PAGE
+        // ===================================
+        const HomeworkPage = ({ onNavigate, currentPage, classCode: initialClassCode }) => {
+            const [classes, setClasses] = useState([]);
+            const [selectedClass, setSelectedClass] = useState(initialClassCode || '');
+
+            useEffect(() => {
+                fetchTeacherClasses();
+            }, []);
+
+            const fetchTeacherClasses = async () => {
+                try {
+                    const teacherId = localStorage.getItem('teacherId') || 'T001';
+                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    
+                    if (teacherData && teacherData.classes) {
+                        setClasses(teacherData.classes);
+                        
+                        if (!selectedClass && teacherData.classes.length > 0) {
+                            setSelectedClass(teacherData.classes[0]);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching teacher classes:', error);
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Homework" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select 
+                                value={selectedClass}
+                                onChange={(e) => setSelectedClass(e.target.value)}
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                            >
+                                {classes.map(classCode => (
+                                    <option key={classCode} value={classCode}>Class {classCode}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="text-center py-6 text-gray-500">
+                            <i data-lucide="notebook-pen" className="w-12 h-12 mx-auto text-green-500"></i>
+                            <p className="mt-2">Homework feature loaded for Class {selectedClass}</p>
+                        </div>
+                        
+                        <button 
+                            onClick={() => alert('Assign homework feature coming soon!')}
+                            className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg flex items-center justify-center"
+                        >
+                            <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Assign New Homework
+                        </button>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        // ===================================
+        // TIMETABLE PAGE
+        // ===================================
+        const TimetablePage = ({ onNavigate, currentPage }) => {
+            const [activeDay, setActiveDay] = useState('monday');
+
+            const days = [
+                { id: 'monday', label: 'Monday' },
+                { id: 'tuesday', label: 'Tuesday' },
+                { id: 'wednesday', label: 'Wednesday' },
+                { id: 'thursday', label: 'Thursday' },
+                { id: 'friday', label: 'Friday' }
+            ];
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Teaching Schedule" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
+                            {days.map(day => (
+                                <button
+                                    key={day.id}
+                                    onClick={() => setActiveDay(day.id)}
+                                    className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${activeDay === day.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                >
+                                    {day.label}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                            <div className="bg-gray-50 p-4 border-b">
+                                <h3 className="font-semibold text-gray-800 text-center">{days.find(d => d.id === activeDay)?.label}'s Schedule</h3>
+                            </div>
+                            <div className="divide-y divide-gray-200">
+                                {['Mathematics', 'Science', 'English', 'History', 'Geography'].map((subject, index) => (
+                                    <div key={index} className="p-4 flex items-center">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                            <span className="font-bold text-sm text-gray-600">{index + 1}</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-800">{subject}</p>
+                                            <p className="text-xs text-gray-500">Period {index + 1} • 9:00 AM - 9:45 AM</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        // ===================================
+        // MAIN APP CONTROLLER
+        // ===================================
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState({ page: 'dashboard', props: {} });
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            
+            useEffect(() => {
+                const teacherId = localStorage.getItem('teacherId');
+                if (!teacherId) { 
+                    window.location.href = 'index.html'; 
+                } else { 
+                    setIsAuthenticated(true); 
+                }
+            }, []);
+            
+            const navigate = (page, props = {}) => {
+                console.log(`Navigating to: ${page}`, props);
+                setCurrentPage({ page, props });
+            };
+            
+            if (!isAuthenticated) { 
+                return (
+                    <div className="w-full h-screen flex items-center justify-center">
+                        <LoadingSpinner />
+                    </div>
+                );
+             }
+            
+            const renderPage = () => {
+                const { page, props } = currentPage;
+                
+                switch(page) {
+                    case 'dashboard': 
+                        return <DashboardPage onNavigate={navigate} currentPage={page} />;
+                    case 'analytics':
+                        return <AnalyticsPage onNavigate={navigate} />;
+                    case 'profile': 
+                        return <ProfilePage onNavigate={navigate} />;
+                    case 'classes': 
+                        return <ClassesPage onNavigate={navigate} currentPage={page} />;
+                    case 'attendance': 
+                        return <AttendancePage onNavigate={navigate} currentPage={page} classCode={props.classCode} />;
+                    case 'homework': 
+                        return <HomeworkPage onNavigate={navigate} currentPage={page} classCode={props.classCode} />;
+                    case 'timetable': 
+                        return <TimetablePage onNavigate={navigate} currentPage={page} />;
+                    default: 
+                        return <DashboardPage onNavigate={navigate} currentPage="dashboard" />;
+                }
+            };
+            
+            return <div>{renderPage()}</div>;
+        };
+
+        // Initialize icons and render app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>

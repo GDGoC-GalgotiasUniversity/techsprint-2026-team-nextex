@@ -261,11 +261,10 @@
         // Firebase database READ function
         const fetchFromFirebase = async (path) => {
             try {
-                const fullPath = path;
-                console.log(`Fetching from Firebase: ${fullPath}`);
-                const snapshot = await database.ref(fullPath).once('value');
+                console.log(`Fetching from Firebase: ${path}`);
+                const snapshot = await database.ref(path).once('value');
                 const data = snapshot.val();
-                console.log(`Firebase data received for ${fullPath}:`, data);
+                console.log(`Firebase data received for ${path}:`, data);
                 return data;
             } catch (error) {
                 console.error('Error fetching from Firebase:', error);
@@ -631,7 +630,7 @@
         };
 
         // ===================================
-        // PROFILE PAGE
+        // PROFILE PAGE (FIXED: Added back button in header)
         // ===================================
         const ProfilePage = ({ onNavigate }) => {
             const [teacherData, setTeacherData] = useState(null);
@@ -663,7 +662,9 @@
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
+                    {/* FIX: Added PageHeader with back button */}
                     <PageHeader title="My Profile" onBack={() => onNavigate('dashboard')} />
+                    
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
                         {loading ? (
                             <LoadingSpinner />
@@ -712,11 +713,12 @@
         };
 
         // ===================================
-        // CLASSES PAGE
+        // CLASSES PAGE (FIXED: Properly reading classes data)
         // ===================================
         const ClassesPage = ({ onNavigate, currentPage }) => {
             const [classes, setClasses] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
 
             useEffect(() => {
                 fetchClasses();
@@ -725,28 +727,59 @@
             const fetchClasses = async () => {
                 try {
                     setLoading(true);
-                    const teacherId = localStorage.getItem('teacherId') || 'T001';
-                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    setError(null);
                     
-                    if (!teacherData || !teacherData.classes) {
+                    const teacherId = localStorage.getItem('teacherId') || 'T001';
+                    console.log(`Fetching teacher data for ID: ${teacherId}`);
+                    
+                    // First, get teacher data
+                    const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    console.log('Teacher data:', teacherData);
+                    
+                    if (!teacherData) {
+                        setError('Teacher data not found');
                         setClasses([]);
                         return;
                     }
                     
+                    const teacherClasses = teacherData.classes;
+                    console.log('Teacher classes array:', teacherClasses);
+                    
+                    if (!teacherClasses || !Array.isArray(teacherClasses) || teacherClasses.length === 0) {
+                        setClasses([]);
+                        return;
+                    }
+                    
+                    // Fetch details for each class
                     const classDetails = [];
-                    for (const classCode of teacherData.classes) {
+                    for (const classCode of teacherClasses) {
+                        console.log(`Fetching class data for: ${classCode}`);
                         const classData = await fetchFromFirebase(`classes/${classCode}`);
+                        console.log(`Class data for ${classCode}:`, classData);
+                        
                         if (classData) {
                             classDetails.push({
                                 code: classCode,
-                                ...classData
+                                name: classData.name || `Class ${classCode}`,
+                                subject: classData.subject || 'General',
+                                students: classData.students || 0
+                            });
+                        } else {
+                            // If class data not found, still add basic info
+                            classDetails.push({
+                                code: classCode,
+                                name: `Class ${classCode}`,
+                                subject: 'General',
+                                students: 0
                             });
                         }
                     }
                     
+                    console.log('Final class details:', classDetails);
                     setClasses(classDetails);
                 } catch (error) {
                     console.error('Error fetching classes:', error);
+                    setError('Failed to load classes data');
                 } finally {
                     setLoading(false);
                 }
@@ -758,6 +791,17 @@
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
                         {loading ? (
                             <LoadingSpinner />
+                        ) : error ? (
+                            <div className="text-center py-6 text-red-500">
+                                <i data-lucide="alert-circle" className="w-12 h-12 mx-auto text-red-400"></i>
+                                <p className="mt-2 font-medium">{error}</p>
+                                <button 
+                                    onClick={fetchClasses}
+                                    className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg"
+                                >
+                                    Retry
+                                </button>
+                            </div>
                         ) : classes.length > 0 ? (
                             <div className="space-y-4">
                                 {classes.map(classItem => (
@@ -766,7 +810,13 @@
                                         className="bg-white p-4 rounded-lg border fade-in"
                                     >
                                         <div className="flex justify-between items-start mb-3">
-                                            <h3 className="font-bold text-gray-800 text-lg">Class {classItem.code}</h3>
+                                            <div>
+                                                <h3 className="font-bold text-gray-800 text-lg">{classItem.name}</h3>
+                                                <p className="text-sm text-gray-600">{classItem.subject}</p>
+                                            </div>
+                                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                {classItem.students} students
+                                            </span>
                                         </div>
                                         <div className="flex space-x-2">
                                             <button 
@@ -787,7 +837,9 @@
                             </div>
                         ) : (
                             <div className="text-center py-6 text-gray-500">
-                                <p className="mt-2">No classes assigned.</p>
+                                <i data-lucide="users" className="w-12 h-12 mx-auto text-gray-400"></i>
+                                <p className="mt-2">No classes assigned to you.</p>
+                                <p className="text-sm mt-1">Please contact administrator to assign classes.</p>
                             </div>
                         )}
                     </main>
