@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduFlow | Next-Gen Campus Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .phone-frame {
+            border: 16px solid #1e293b;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25),
+                        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        }
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 24px;
+            background: #1e293b;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 20;
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .pulse-ring {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="text-gray-900">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-effect">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="hero-gradient p-2 rounded-xl text-white">
+                        <i data-lucide="workflow" class="w-6 h-6"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight">
+                        <span class="gradient-text">EduFlow</span>
+                    </span>
+                </div>
+                
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-600">
+                    <a href="#features" class="hover:text-indigo-600 transition-all hover:font-semibold">Features</a>
+                    <a href="#demo" class="hover:text-indigo-600 transition-all hover:font-semibold">Demo</a>
+                    <a href="#technology" class="hover:text-indigo-600 transition-all hover:font-semibold">Technology</a>
+                </div>
+                
+                <button onclick="scrollToDemo()" class="hero-gradient text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:shadow-lg hover:scale-105 transition-all">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="rocket" class="w-4 h-4"></i>
+                        <span>Launch Demo</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-4xl mx-auto mb-16 animate__animated animate__fadeIn">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 text-sm font-semibold uppercase tracking-wide mb-6 border border-indigo-100">
+                    <div class="pulse-ring w-2 h-2 rounded-full bg-indigo-600"></div>
+                    Live Prototype v1.0
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                    Modern Campus
+                    <br/>
+                    <span class="gradient-text">Management System</span>
+                </h1>
+                
+                <p class="text-xl text-gray-600 mb-10 leading-relaxed max-w-3xl mx-auto">
+                    A complete digital ecosystem for educational institutions. Streamline operations, 
+                    enhance communication, and transform the learning experience with our custom-built platform.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="launchStudentDemo()" 
+                            class="group relative px-10 py-4 hero-gradient text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:shadow-indigo-500/30 transition-all transform hover:-translate-y-1">
+                        <div class="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full"></div>
+                        <div class="flex items-center gap-3 relative z-10">
+                            <i data-lucide="user" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
+                            <span>Student Dashboard</span>
+                        </div>
+                    </button>
+
+                    <button onclick="launchTeacherDemo()" 
+                            class="group px-10 py-4 bg-white text-gray-800 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl border-2 border-gray-100 hover:border-indigo-300 hover:text-indigo-600 transition-all transform hover:-translate-y-1">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="users" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                            <span>Faculty Portal</span>
+                        </div>
+                    </button>
+                </div>
+                
+                
+            </div>
+
+            <!-- App Preview -->
+            <div id="demo" class="relative max-w-6xl mx-auto mt-20">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                    <!-- Left Feature -->
+                    <div class="hidden lg:block floating">
+                        <div class="feature-card glass-effect p-8 rounded-3xl">
+                            <div class="w-16 h-16 hero-gradient rounded-2xl flex items-center justify-center text-white mb-6 mx-auto">
+                                <i data-lucide="bar-chart-3" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-center mb-3">Real-time Analytics</h3>
+                            <p class="text-gray-600 text-center">Live dashboards with performance insights and predictive analysis.</p>
+                        </div>
+                    </div>
+
+                    <!-- Main App Preview -->
+                    <div class="col-span-1 lg:col-span-1 relative z-20">
+                        <div class="phone-frame h-[650px] mx-auto max-w-sm">
+                            <div class="phone-notch"></div>
+                            <div class="h-full w-full overflow-hidden bg-gradient-to-b from-gray-50 to-white flex flex-col">
+                                <!-- App Header -->
+                                <div class="hero-gradient h-40 p-6 text-white flex flex-col justify-end">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h2 class="font-bold text-2xl">Dashboard</h2>
+                                            <p class="opacity-90 text-sm">Welcome back!</p>
+                                        </div>
+                                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                            <i data-lucide="bell" class="w-5 h-5"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stats Cards -->
+                                <div class="p-6 grid grid-cols-2 gap-4 -mt-8">
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                        <div class="text-indigo-600 font-bold text-2xl mb-1">94%</div>
+                                        <div class="text-xs text-gray-500 font-medium">Attendance</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                        <div class="text-emerald-600 font-bold text-2xl mb-1">A+</div>
+                                        <div class="text-xs text-gray-500 font-medium">Avg Grade</div>
+                                    </div>
+                                </div>
+
+                                <!-- Notifications -->
+                                <div class="px-6 pb-6 space-y-4 flex-1">
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                                        <div class="flex items-start gap-3">
+                                            <div class="bg-blue-100 p-2 rounded-lg text-blue-600">
+                                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-sm text-gray-800">Upcoming Event</p>
+                                                <p class="text-xs text-gray-600 mt-1">Science Fair - Tomorrow</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+                                        <div class="flex items-start gap-3">
+                                            <div class="bg-amber-100 p-2 rounded-lg text-amber-600">
+                                                <i data-lucide="clock" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-sm text-gray-800">Assignment Due</p>
+                                                <p class="text-xs text-gray-600 mt-1">Math homework - 2 hours left</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bottom Nav -->
+                                <div class="border-t border-gray-100 p-4">
+                                    <div class="grid grid-cols-4 gap-4">
+                                        <div class="text-center">
+                                            <i data-lucide="home" class="w-5 h-5 text-indigo-600 mx-auto"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <i data-lucide="book-open" class="w-5 h-5 text-gray-400 mx-auto"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <i data-lucide="message-square" class="w-5 h-5 text-gray-400 mx-auto"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <i data-lucide="user" class="w-5 h-5 text-gray-400 mx-auto"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Feature -->
+                    <div class="hidden lg:block floating" style="animation-delay: 1s;">
+                        <div class="feature-card glass-effect p-8 rounded-3xl">
+                            <div class="w-16 h-16 hero-gradient rounded-2xl flex items-center justify-center text-white mb-6 mx-auto">
+                                <i data-lucide="cloud" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-center mb-3">Cloud Native</h3>
+                            <p class="text-gray-600 text-center">Secure, scalable infrastructure with real-time sync across devices.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-gradient-to-b from-white to-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 animate__animated animate__fadeIn">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Enterprise-Grade Features</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Built with modern technology stack for performance, security, and scalability.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="feature-card glass-effect p-8 rounded-3xl">
+                    <div class="w-14 h-14 hero-gradient rounded-2xl flex items-center justify-center text-white mb-6">
+                        <i data-lucide="cpu" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">React Powered</h3>
+                    <p class="text-gray-600">Built with React 18 for lightning-fast performance and smooth user experience.</p>
+                </div>
+
+                <div class="feature-card glass-effect p-8 rounded-3xl">
+                    <div class="w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white mb-6">
+                        <i data-lucide="shield-check" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Enterprise Security</h3>
+                    <p class="text-gray-600">End-to-end encryption, role-based access control, and compliance-ready architecture.</p>
+                </div>
+
+                <div class="feature-card glass-effect p-8 rounded-3xl">
+                    <div class="w-14 h-14 bg-gradient-to-r from-orange-500 to-pink-600 rounded-2xl flex items-center justify-center text-white mb-6">
+                        <i data-lucide="smartphone" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Mobile First</h3>
+                    <p class="text-gray-600">Fully responsive design that works seamlessly on all devices and screen sizes.</p>
+                </div>
+
+                <div class="feature-card glass-effect p-8 rounded-3xl">
+                    <div class="w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center text-white mb-6">
+                        <i data-lucide="zap" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Real-time Sync</h3>
+                    <p class="text-gray-600">Live updates across all platforms with WebSocket integration and offline support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section id="technology" class="py-20 bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <i data-lucide="code-2" class="w-14 h-14 mx-auto text-indigo-400 mb-6"></i>
+                <h2 class="text-4xl font-bold mb-4">Modern Tech Stack</h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Built with industry-standard technologies for reliability and future-proofing.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="bg-gray-800/50 p-6 rounded-2xl text-center border border-gray-700 hover:border-indigo-500 transition-colors">
+                    <div class="text-2xl font-bold text-indigo-400 mb-2">React</div>
+                    <p class="text-gray-400 text-sm">Frontend Framework</p>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-2xl text-center border border-gray-700 hover:border-emerald-500 transition-colors">
+                    <div class="text-2xl font-bold text-emerald-400 mb-2">Node.js</div>
+                    <p class="text-gray-400 text-sm">Backend Runtime</p>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-2xl text-center border border-gray-700 hover:border-amber-500 transition-colors">
+                    <div class="text-2xl font-bold text-amber-400 mb-2">MongoDB</div>
+                    <p class="text-gray-400 text-sm">Database</p>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-2xl text-center border border-gray-700 hover:border-red-500 transition-colors">
+                    <div class="text-2xl font-bold text-red-400 mb-2">Firebase</div>
+                    <p class="text-gray-400 text-sm">Authentication & Realtime</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="hero-gradient rounded-3xl p-12 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                <h2 class="text-3xl font-bold text-white mb-6">Ready to transform your institution?</h2>
+                <p class="text-white/90 mb-8 text-lg max-w-2xl mx-auto">
+                    Experience the future of campus management with our fully functional demo.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="launchStudentDemo()" 
+                            class="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg">
+                        Try Student Portal
+                    </button>
+                    <button onclick="launchTeacherDemo()" 
+                            class="bg-gray-900/30 text-white border-2 border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-colors">
+                        Explore Faculty Dashboard
+                    </button>
+                </div>
+                <p class="mt-6 text-white/70 text-sm">
+                    <i data-lucide="lock" class="w-4 h-4 inline mr-2"></i>
+                    All demo data is securely isolated and resets on refresh
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="hero-gradient p-2 rounded-lg">
+                        <i data-lucide="workflow" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-xl">EduFlow</span>
+                        <p class="text-gray-400 text-sm">Campus Management System</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="github" class="w-5 h-5"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="twitter" class="w-5 h-5"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="linkedin" class="w-5 h-5"></i>
+                    </a>
+                </div>
+                
+                <div class="text-center md:text-right">
+                    <p class="text-gray-400 text-sm">© 2025 Nextex Group</p>
+                    <p class="text-gray-500 text-xs mt-1">Version 1.0• Built with modern web standards</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Smooth scroll to demo section
+        function scrollToDemo() {
+            document.getElementById('demo').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        // Demo launch functions
+        function launchStudentDemo() {
+            // Clear previous session
+            localStorage.clear();
+            
+            // Set student demo credentials
+            const studentData = {
+                id: 'DEMO_STU_001',
+                name: 'Demo Student',
+                class: '10A',
+                email: 'demo.student@edufolow.app',
+                role: 'student'
+            };
+            
+            localStorage.setItem('user', JSON.stringify(studentData));
+            localStorage.setItem('token', 'demo_token_student_' + Date.now());
+            localStorage.setItem('session_start', new Date().toISOString());
+            
+            // Show loading state
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+                    <span>Launching Dashboard...</span>
+                </div>
+            `;
+            lucide.createIcons();
+            
+            // Redirect after brief delay
+            setTimeout(() => {
+                window.location.href = 'student/index.html';
+            }, 800);
+        }
+
+        function launchTeacherDemo() {
+            // Clear previous session
+            localStorage.clear();
+            
+            // Set teacher demo credentials
+            const teacherData = {
+                id: 'DEMO_TCH_001',
+                name: 'Demo Instructor',
+                department: 'Mathematics',
+                email: 'demo.teacher@edufolow.app',
+                role: 'teacher'
+            };
+            
+            localStorage.setItem('user', JSON.stringify(teacherData));
+            localStorage.setItem('token', 'demo_token_teacher_' + Date.now());
+            localStorage.setItem('session_start', new Date().toISOString());
+            
+            // Show loading state
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+                    <span>Loading Faculty Portal...</span>
+                </div>
+            `;
+            lucide.createIcons();
+            
+            // Redirect after brief delay
+            setTimeout(() => {
+                window.location.href = 'teacher/index.html';
+            }, 800);
+        }
+
+        // Add scroll animation
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all feature cards
+            document.querySelectorAll('.feature-card').forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
