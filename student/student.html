@@ -184,6 +184,9 @@
             </div>
         );
 
+        // ===================================
+        // FOOTER COMPONENT (UPDATED - REMOVED TIMETABLE)
+        // ===================================
         const AppFooter = ({ activePage, onNavigate }) => {
             useEffect(() => { if (window.lucide) lucide.createIcons(); }, [activePage]);
             
@@ -192,12 +195,12 @@
                 { id: 'attendance', icon: 'user-check', label: 'Attendance' },
                 { id: 'grades', icon: 'book-check', label: 'Grades' }, 
                 { id: 'homework', icon: 'notebook-pen', label: 'Homework' },
-                { id: 'timetable', icon: 'calendar', label: 'Timetable' },
+                // Removed: { id: 'timetable', icon: 'calendar', label: 'Timetable' },
                 { id: 'materials', icon: 'book-open', label: 'Materials' }
             ];
             
             return ( 
-                <footer className="grid grid-cols-6 gap-1 p-2 border-t bg-white sticky bottom-0"> 
+                <footer className="grid grid-cols-5 gap-1 p-2 border-t bg-white sticky bottom-0"> 
                     {navItems.map(item => { 
                         const isActive = activePage === item.id; 
                         return ( 
@@ -957,159 +960,6 @@
         };
 
         //==================================
-// FIXED TIMETABLE PAGE
-//==================================
-const TimetablePage = ({ onNavigate, currentPage }) => {
-    const [timetable, setTimetable] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [activeDay, setActiveDay] = useState('monday');
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-    useEffect(() => { 
-        console.log("Fetching timetable...");
-        fetchTimetable(); 
-    }, []);
-
-    const fetchTimetable = async () => {
-        try {
-            setLoading(true);
-            const studentClass = localStorage.getItem('studentClass') || '10A';
-            console.log("Student class:", studentClass);
-            
-            const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
-            console.log("Class data received:", classData);
-            
-            if (classData && classData.timetable) {
-                console.log("Timetable data found:", classData.timetable);
-                setTimetable(classData.timetable);
-            } else {
-                console.log("No timetable data found, using default");
-                // Create default timetable if none exists
-                const defaultTimetable = {
-                    monday: ['Math', 'Science', 'English', 'History', 'Art', 'PE'],
-                    tuesday: ['Science', 'Math', 'Geography', 'English', 'Music', 'Library'],
-                    wednesday: ['English', 'History', 'Math', 'Science', 'Computer', 'Sports'],
-                    thursday: ['Math', 'English', 'Science', 'Art', 'History', 'PE'],
-                    friday: ['Science', 'Math', 'English', 'Geography', 'Music', 'Assembly']
-                };
-                setTimetable(defaultTimetable);
-            }
-        } catch (error) { 
-            console.error('Error fetching timetable:', error); 
-            // Set default timetable on error
-            const defaultTimetable = {
-                monday: ['Math', 'Science', 'English', 'History', 'Art', 'PE'],
-                tuesday: ['Science', 'Math', 'Geography', 'English', 'Music', 'Library'],
-                wednesday: ['English', 'History', 'Math', 'Science', 'Computer', 'Sports'],
-                thursday: ['Math', 'English', 'Science', 'Art', 'History', 'PE'],
-                friday: ['Science', 'Math', 'English', 'Geography', 'Music', 'Assembly']
-            };
-            setTimetable(defaultTimetable);
-        } finally { 
-            setLoading(false); 
-        }
-    };
-
-    return (
-        <div className="w-full bg-white mobile-container flex flex-col">
-            <PageHeader title="Timetable" onBack={() => onNavigate('dashboard')} />
-            <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <LoadingSpinner />
-                        <p className="text-gray-500 mt-2">Loading timetable...</p>
-                    </div>
-                ) : timetable ? (
-                    <>
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-700 mb-3">Weekly Schedule</h3>
-                            <div className="flex overflow-x-auto pb-2 scrollbar-hide">
-                                {days.map(day => {
-                                    const hasData = timetable[day] && timetable[day].length > 0;
-                                    return (
-                                        <button key={day} onClick={() => setActiveDay(day)}
-                                            className={`px-4 py-2 rounded-full mr-2 capitalize text-sm font-medium ${activeDay === day ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                                            {day.substring(0, 3)}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                            <div className="bg-gray-50 p-4 border-b">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="font-semibold text-gray-800 capitalize">{activeDay}</h4>
-                                    <span className="text-sm text-gray-500">
-                                        {timetable[activeDay] ? `${timetable[activeDay].length} periods` : 'No schedule'}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            {timetable[activeDay] && timetable[activeDay].length > 0 ? (
-                                <div className="divide-y divide-gray-200">
-                                    {timetable[activeDay].map((subject, idx) => (
-                                        <div key={idx} className="p-4 flex items-center hover:bg-gray-50 transition-colors">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 text-blue-600 font-bold text-sm">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-medium text-gray-800">{subject || `Period ${idx + 1}`}</p>
-                                                <div className="flex items-center mt-1">
-                                                    <span className="text-xs text-gray-500 mr-3">Period {idx + 1}</span>
-                                                    <span className="text-xs text-gray-500">
-                                                        {idx + 8}:00 - {idx + 9}:00
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <i data-lucide="book-open" className="w-5 h-5 text-gray-400"></i>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <i data-lucide="calendar-x" className="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
-                                    <p className="text-gray-500">No schedule for {activeDay}</p>
-                                    <p className="text-sm text-gray-400 mt-1">Check other days or contact admin</p>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Timetable Summary */}
-                        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex items-center mb-2">
-                                <i data-lucide="info" className="w-5 h-5 text-blue-600 mr-2"></i>
-                                <h4 className="font-medium text-blue-800">Timetable Info</h4>
-                            </div>
-                            <p className="text-sm text-blue-700">
-                                This is your weekly class schedule. Each day shows the subjects in order of periods.
-                            </p>
-                            <div className="flex items-center mt-3 text-xs text-blue-600">
-                                <i data-lucide="clock" className="w-4 h-4 mr-1"></i>
-                                <span>School hours: 8:00 AM - 3:00 PM</span>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="text-center py-12">
-                        <i data-lucide="calendar-off" className="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Timetable Available</h3>
-                        <p className="text-gray-500 mb-4">Your timetable hasn't been set up yet.</p>
-                        <button 
-                            onClick={fetchTimetable}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center">
-                            <i data-lucide="refresh-cw" className="w-4 h-4 mr-2"></i>
-                            Try Again
-                        </button>
-                    </div>
-                )}
-            </main>
-            <AppFooter activePage={currentPage} onNavigate={onNavigate} />
-        </div>
-    );
-};
-
-        //==================================
         // NEW: STUDY MATERIALS PAGE
         //==================================
         const StudyMaterialsPage = ({ onNavigate, currentPage }) => {
@@ -1320,7 +1170,7 @@ const TimetablePage = ({ onNavigate, currentPage }) => {
         };
 
         //==================================
-        // MAIN APP CONTROLLER
+        // MAIN APP CONTROLLER (UPDATED - REMOVED TIMETABLE)
         //==================================
         const App = () => {
             const [currentPage, setCurrentPage] = useState('dashboard');
@@ -1352,7 +1202,7 @@ const TimetablePage = ({ onNavigate, currentPage }) => {
                 attendance: <AttendancePage onNavigate={navigate} currentPage={currentPage} />,
                 grades: <GradesPage onNavigate={navigate} currentPage={currentPage} />,
                 homework: <HomeworkPage onNavigate={navigate} currentPage={currentPage} />,
-                timetable: <TimetablePage onNavigate={navigate} currentPage={currentPage} />,
+                // Removed: timetable: <TimetablePage onNavigate={navigate} currentPage={currentPage} />,
                 materials: <StudyMaterialsPage onNavigate={navigate} currentPage={currentPage} />,
                 messages: <MessagesPage onNavigate={navigate} currentPage={currentPage} />,
                 events: <EventsPage onNavigate={navigate} currentPage={currentPage} />,

@@ -345,7 +345,7 @@
         };
 
         // ===================================
-        // FOOTER COMPONENT
+        // FOOTER COMPONENT (UPDATED - REMOVED TIMETABLE)
         // ===================================
         const AppFooter = ({ activePage, onNavigate }) => {
             useEffect(() => { 
@@ -358,12 +358,12 @@
                 { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
                 { id: 'classes', icon: 'users', label: 'Classes' },
                 { id: 'attendance', icon: 'user-check', label: 'Attendance' }, 
-                { id: 'homework', icon: 'notebook-pen', label: 'Homework' },
-                { id: 'timetable', icon: 'calendar', label: 'Timetable' }
+                { id: 'homework', icon: 'notebook-pen', label: 'Homework' }
+                // Removed: { id: 'timetable', icon: 'calendar', label: 'Timetable' }
             ];
             
             return ( 
-                <footer className="grid grid-cols-5 gap-1 p-2 border-t bg-white sticky bottom-0"> 
+                <footer className="grid grid-cols-4 gap-1 p-2 border-t bg-white sticky bottom-0"> 
                     {navItems.map(item => { 
                         const isActive = activePage === item.id; 
                         return ( 
@@ -383,7 +383,7 @@
         };
 
         // ===================================
-        // ANALYTICS PAGE (FIXED NAVIGATION)
+        // ANALYTICS PAGE
         // ===================================
         const AnalyticsPage = ({ onNavigate }) => {
             const chartRef = useRef(null);
@@ -416,7 +416,11 @@
             
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
-                    <PageHeader title="Analytics Dashboard" onBack={() => onNavigate('dashboard')} />
+                    <PageHeader 
+                        title="Analytics Dashboard" 
+                        onBack={() => onNavigate('dashboard')} 
+                        showBackButton={true}
+                    />
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             <StatCard label="Avg Attendance" value="87.6%" color="blue" icon="user-check" />
@@ -447,13 +451,20 @@
                                 </li>
                             </ul>
                         </div>
+                        
+                        <button 
+                            onClick={() => onNavigate('dashboard')}
+                            className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg flex items-center justify-center"
+                        >
+                            <i data-lucide="arrow-left" className="w-5 h-5 mr-2"></i> Back to Dashboard
+                        </button>
                     </main>
                 </div>
             );
         };
 
         // ===================================
-        // DASHBOARD PAGE (WITH FIXED BUTTONS)
+        // DASHBOARD PAGE
         // ===================================
         const DashboardPage = ({ onNavigate, currentPage }) => {
             const [dashboardStats, setDashboardStats] = useState([
@@ -491,7 +502,7 @@
                     
                     setAnnouncements(filteredAnnouncements);
 
-                    const teacherClasses = teacherData?.classes || [];
+                    const teacherClasses = teacherData?.assigned_classes || [];
                     
                     let totalStudents = 0;
                     let todaysClasses = 0;
@@ -511,7 +522,9 @@
                                 const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                                 const todayKey = days[dayOfWeek];
                                 if(classData.timetable[todayKey]) {
-                                    todaysClasses += classData.timetable[todayKey].length;
+                                    todaysClasses += classData.timetable[todayKey].filter(
+                                        period => period.teacher === teacherId
+                                    ).length;
                                 }
                             }
                             
@@ -539,7 +552,6 @@
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
-                    {/* HEADER WITH FIXED BUTTONS */}
                     <header className="flex items-center justify-between p-4 shadow-md" style={{ backgroundColor: 'var(--brand-blue)' }}>
                         <div className="flex items-center space-x-2">
                             <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('profile'); }} className="text-white">
@@ -630,7 +642,7 @@
         };
 
         // ===================================
-        // PROFILE PAGE (FIXED: Added back button in header)
+        // PROFILE PAGE
         // ===================================
         const ProfilePage = ({ onNavigate }) => {
             const [teacherData, setTeacherData] = useState(null);
@@ -655,14 +667,16 @@
 
             const handleLogout = () => {
                 if (confirm('Are you sure you want to logout?')) {
-                    localStorage.clear();
+                    localStorage.removeItem('teacherId');
+                    localStorage.removeItem('loggedInUserName');
+                    localStorage.removeItem('theme');
+                    sessionStorage.clear();
                     window.location.href = 'index.html';
                 }
             };
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
-                    {/* FIX: Added PageHeader with back button */}
                     <PageHeader title="My Profile" onBack={() => onNavigate('dashboard')} />
                     
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
@@ -694,7 +708,7 @@
                                         <div className="border-t"></div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-500">Classes</label>
-                                            <p className="font-semibold">{teacherData.classes ? teacherData.classes.join(', ') : 'None'}</p>
+                                            <p className="font-semibold">{teacherData.assigned_classes ? teacherData.assigned_classes.join(', ') : 'None'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -713,12 +727,13 @@
         };
 
         // ===================================
-        // CLASSES PAGE (FIXED: Properly reading classes data)
+        // CLASSES PAGE (NOW WITH CLICKABLE CLASSES)
         // ===================================
         const ClassesPage = ({ onNavigate, currentPage }) => {
             const [classes, setClasses] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
+            const [allStudents, setAllStudents] = useState({});
 
             useEffect(() => {
                 fetchClasses();
@@ -730,11 +745,10 @@
                     setError(null);
                     
                     const teacherId = localStorage.getItem('teacherId') || 'T001';
-                    console.log(`Fetching teacher data for ID: ${teacherId}`);
+                    const studentsData = await fetchFromFirebase('students');
+                    setAllStudents(studentsData || {});
                     
-                    // First, get teacher data
                     const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
-                    console.log('Teacher data:', teacherData);
                     
                     if (!teacherData) {
                         setError('Teacher data not found');
@@ -742,30 +756,25 @@
                         return;
                     }
                     
-                    const teacherClasses = teacherData.classes;
-                    console.log('Teacher classes array:', teacherClasses);
+                    const teacherClasses = teacherData.assigned_classes || [];
                     
                     if (!teacherClasses || !Array.isArray(teacherClasses) || teacherClasses.length === 0) {
                         setClasses([]);
                         return;
                     }
                     
-                    // Fetch details for each class
                     const classDetails = [];
                     for (const classCode of teacherClasses) {
-                        console.log(`Fetching class data for: ${classCode}`);
                         const classData = await fetchFromFirebase(`classes/${classCode}`);
-                        console.log(`Class data for ${classCode}:`, classData);
                         
                         if (classData) {
                             classDetails.push({
                                 code: classCode,
-                                name: classData.name || `Class ${classCode}`,
-                                subject: classData.subject || 'General',
-                                students: classData.students || 0
+                                name: `Class ${classCode}`,
+                                subject: classData.class_teacher === teacherId ? 'Class Teacher' : 'Subject Teacher',
+                                students: classData.strength || 0
                             });
                         } else {
-                            // If class data not found, still add basic info
                             classDetails.push({
                                 code: classCode,
                                 name: `Class ${classCode}`,
@@ -775,7 +784,6 @@
                         }
                     }
                     
-                    console.log('Final class details:', classDetails);
                     setClasses(classDetails);
                 } catch (error) {
                     console.error('Error fetching classes:', error);
@@ -783,6 +791,10 @@
                 } finally {
                     setLoading(false);
                 }
+            };
+            
+            const getStudentCount = (classCode) => {
+                return Object.values(allStudents).filter(s => s.class === classCode).length;
             };
 
             return (
@@ -805,9 +817,11 @@
                         ) : classes.length > 0 ? (
                             <div className="space-y-4">
                                 {classes.map(classItem => (
-                                    <div 
+                                    <a 
+                                        href="#"
                                         key={classItem.code} 
-                                        className="bg-white p-4 rounded-lg border fade-in"
+                                        onClick={(e) => { e.preventDefault(); onNavigate('classRoster', { classCode: classItem.code }); }}
+                                        className="bg-white p-4 rounded-lg border fade-in block hover:bg-gray-50"
                                     >
                                         <div className="flex justify-between items-start mb-3">
                                             <div>
@@ -815,24 +829,24 @@
                                                 <p className="text-sm text-gray-600">{classItem.subject}</p>
                                             </div>
                                             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                                                {classItem.students} students
+                                                {getStudentCount(classItem.code)} students
                                             </span>
                                         </div>
                                         <div className="flex space-x-2">
                                             <button 
-                                                onClick={() => onNavigate('attendance', { classCode: classItem.code })}
+                                                onClick={(e) => { e.stopPropagation(); onNavigate('attendance', { classCode: classItem.code }); }}
                                                 className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center"
                                             >
                                                 <i data-lucide="user-check" className="w-4 h-4 mr-1"></i> Attendance
                                             </button>
                                             <button 
-                                                onClick={() => onNavigate('homework', { classCode: classItem.code })}
+                                                onClick={(e) => { e.stopPropagation(); onNavigate('homework', { classCode: classItem.code }); }}
                                                 className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-3 rounded flex items-center justify-center"
                                             >
                                                 <i data-lucide="notebook-pen" className="w-4 h-4 mr-1"></i> Homework
                                             </button>
                                         </div>
-                                    </div>
+                                    </a>
                                 ))}
                             </div>
                         ) : (
@@ -849,11 +863,75 @@
         };
 
         // ===================================
-        // ATTENDANCE PAGE
+        // CLASS ROSTER PAGE
+        // ===================================
+        const ClassRosterPage = ({ onNavigate, classCode }) => {
+            const [students, setStudents] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchRoster();
+            }, [classCode]);
+
+            const fetchRoster = async () => {
+                try {
+                    setLoading(true);
+                    const allStudents = await fetchFromFirebase('students');
+                    if (allStudents) {
+                        const classStudents = Object.values(allStudents)
+                            .filter(s => s.class === classCode)
+                            .sort((a, b) => a.rollNo - b.rollNo);
+                        setStudents(classStudents);
+                    }
+                } catch (error) {
+                    console.error("Error fetching roster:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title={`Class ${classCode} Roster`} onBack={() => onNavigate('classes')} />
+                    <main className="flex-1 overflow-y-auto bg-gray-50">
+                        {loading ? (
+                            <LoadingSpinner />
+                        ) : students.length > 0 ? (
+                            <div className="bg-white rounded-lg shadow-sm border m-4 overflow-hidden">
+                                <ul className="divide-y divide-gray-200">
+                                    {students.map(student => (
+                                        <li key={student.admission_number} className="p-4 flex items-center">
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                <span className="font-semibold text-gray-600">{student.rollNo}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-800">{student.name}</p>
+                                                <p className="text-sm text-gray-500">{student.admission_number}</p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">
+                                <i data-lucide="user-x" className="w-12 h-12 mx-auto text-gray-400"></i>
+                                <p className="mt-2">No students found in this class.</p>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        // ===================================
+        // ATTENDANCE PAGE (FULLY FUNCTIONAL)
         // ===================================
         const AttendancePage = ({ onNavigate, currentPage, classCode: initialClassCode }) => {
             const [classes, setClasses] = useState([]);
             const [selectedClass, setSelectedClass] = useState(initialClassCode || '');
+            const [attendance, setAttendance] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [allStudents, setAllStudents] = useState({});
 
             useEffect(() => {
                 fetchTeacherClasses();
@@ -861,61 +939,399 @@
 
             const fetchTeacherClasses = async () => {
                 try {
+                    setLoading(true);
                     const teacherId = localStorage.getItem('teacherId') || 'T001';
                     const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                    const studentsData = await fetchFromFirebase('students');
+                    setAllStudents(studentsData || {});
                     
-                    if (teacherData && teacherData.classes) {
-                        setClasses(teacherData.classes);
+                    if (teacherData && teacherData.assigned_classes) {
+                        const teacherClasses = teacherData.assigned_classes;
+                        setClasses(teacherClasses);
                         
-                        if (!selectedClass && teacherData.classes.length > 0) {
-                            setSelectedClass(teacherData.classes[0]);
+                        let classToLoad = selectedClass;
+                        if (!classToLoad && teacherClasses.length > 0) {
+                            classToLoad = teacherClasses[0];
+                            setSelectedClass(classToLoad);
+                        }
+                        
+                        if (classToLoad) {
+                            await fetchClassAttendance(classToLoad);
                         }
                     }
                 } catch (error) {
                     console.error('Error fetching teacher classes:', error);
+                } finally {
+                    setLoading(false);
                 }
+            };
+
+            const fetchClassAttendance = async (classCode) => {
+                try {
+                    setLoading(true);
+                    const classData = await fetchFromFirebase(`classes/${classCode}`) || {};
+                    
+                    const attendanceArray = Object.values(classData.attendance || {});
+                    
+                    if (attendanceArray.length === 0) {
+                        setAttendance([]);
+                        return;
+                    }
+                    
+                    const recentAttendance = attendanceArray
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .slice(0, 10);
+                    
+                    setAttendance(recentAttendance);
+                } catch (error) {
+                    console.error('Error fetching attendance:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const getStudentName = (studentId) => {
+                return allStudents[studentId]?.name || studentId;
+            };
+
+            const handleClassChange = (classCode) => {
+                setSelectedClass(classCode);
+                fetchClassAttendance(classCode);
             };
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
                     <PageHeader title="Attendance" onBack={() => onNavigate('dashboard')} />
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-                            <select 
-                                value={selectedClass}
-                                onChange={(e) => setSelectedClass(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                            >
-                                {classes.map(classCode => (
-                                    <option key={classCode} value={classCode}>Class {classCode}</option>
-                                ))}
-                            </select>
-                        </div>
-                        
-                        <div className="text-center py-6 text-gray-500">
-                            <i data-lucide="user-check" className="w-12 h-12 mx-auto text-gray-400"></i>
-                            <p className="mt-2">Attendance feature loaded for Class {selectedClass}</p>
-                        </div>
-                        
-                        <button 
-                            onClick={() => onNavigate('markAttendance', { classCode: selectedClass })}
-                            className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg flex items-center justify-center"
-                        >
-                            <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Mark Today's Attendance
-                        </button>
+                        {loading ? <LoadingSpinner /> : (
+                            <>
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                                    <select 
+                                        value={selectedClass}
+                                        onChange={(e) => handleClassChange(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                    >
+                                        {classes.map(classCode => (
+                                            <option key={classCode} value={classCode}>Class {classCode}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <h3 className="text-lg font-semibold text-gray-700 mb-3">Recent Attendance</h3>
+                                {attendance.length > 0 ? (
+                                    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                                        <ul className="divide-y divide-gray-200">
+                                            {attendance.map(record => (
+                                                <li key={record.id} className="p-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <p className="font-medium text-gray-800">{formatDate(record.date)}</p>
+                                                        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                                                            record.status === 'present' ? 'attendance-present' : 'attendance-absent'
+                                                        }`}>
+                                                            {record.status === 'present' ? 'Present' : 'Absent'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">Student: {getStudentName(record.student_id)}</p>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">
+                                        <i data-lucide="calendar-x" className="w-12 h-12 mx-auto text-gray-400"></i>
+                                        <p className="mt-2">No attendance records found.</p>
+                                    </div>
+                                )}
+                                
+                                <button 
+                                    onClick={() => onNavigate('markAttendance', { classCode: selectedClass })}
+                                    disabled={!selectedClass}
+                                    className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg flex items-center justify-center disabled:bg-gray-400"
+                                >
+                                    <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Mark Today's Attendance
+                                </button>
+                            </>
+                        )}
                     </main>
                     <AppFooter activePage={currentPage} onNavigate={onNavigate} />
                 </div>
             );
         };
+        
+        // ===================================
+        // MARK ATTENDANCE PAGE (FULLY FUNCTIONAL)
+        // ===================================
+        const MarkAttendancePage = ({ onNavigate, classCode }) => {
+            const [students, setStudents] = useState([]);
+            const [attendanceStatus, setAttendanceStatus] = useState({});
+            const [loading, setLoading] = useState(true);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const todayDate = getTodayDateString();
+
+            useEffect(() => {
+                fetchStudentsAndAttendance();
+            }, [classCode]);
+
+            const fetchStudentsAndAttendance = async () => {
+                try {
+                    setLoading(true);
+                    const allStudents = await fetchFromFirebase('students');
+                    const classData = await fetchFromFirebase(`classes/${classCode}`);
+                    
+                    const classStudents = Object.values(allStudents || {})
+                        .filter(s => s.class === classCode)
+                        .sort((a, b) => a.rollNo - b.rollNo);
+                    setStudents(classStudents);
+                    
+                    const existingAttendance = Object.values(classData?.attendance || {});
+                    const todaysAttendance = existingAttendance.filter(a => a.date === todayDate);
+                    
+                    const initialStatus = {};
+                    classStudents.forEach(student => {
+                        const record = todaysAttendance.find(a => a.student_id === student.admission_number);
+                        initialStatus[student.admission_number] = record ? record.status : 'present';
+                    });
+                    setAttendanceStatus(initialStatus);
+                    
+                } catch (error) {
+                    console.error("Error fetching students:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const setStatus = (studentId, status) => {
+                setAttendanceStatus(prev => ({ ...prev, [studentId]: status }));
+            };
+
+            const handleSubmit = async () => {
+                if (confirm('Are you sure you want to submit this attendance?')) {
+                    try {
+                        setIsSubmitting(true);
+                        const classData = await fetchFromFirebase(`classes/${classCode}`);
+                        const attendanceNode = classData?.attendance || {};
+                        
+                        const newAttendanceRecords = {};
+                        students.forEach(student => {
+                            const recordId = `ATT-${todayDate}-${student.admission_number}`;
+                            newAttendanceRecords[recordId] = {
+                                id: recordId,
+                                date: todayDate,
+                                student_id: student.admission_number,
+                                status: attendanceStatus[student.admission_number] || 'present'
+                            };
+                        });
+                        
+                        const updatedAttendance = {...attendanceNode, ...newAttendanceRecords};
+                        
+                        await writeToFirebase(`classes/${classCode}/attendance`, updatedAttendance);
+                        
+                        alert('Attendance submitted successfully!');
+                        onNavigate('attendance');
+                    } catch (error) {
+                        console.error("Error submitting attendance:", error);
+                        alert('Failed to submit attendance.');
+                    } finally {
+                        setIsSubmitting(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title={`Mark Attendance - ${classCode}`} onBack={() => onNavigate('attendance')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? <LoadingSpinner /> : (
+                            <>
+                                <div className="bg-white p-4 rounded-lg border mb-4 text-center">
+                                    <h3 className="font-semibold text-lg text-gray-800">Date: {formatDate(todayDate)}</h3>
+                                </div>
+                                <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                                    <ul className="divide-y divide-gray-200">
+                                        {students.map(student => (
+                                            <li key={student.admission_number} className="p-4">
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-medium text-gray-800">{student.name}</p>
+                                                        <p className="text-sm text-gray-500">Roll No: {student.rollNo}</p>
+                                                    </div>
+                                                    <div className="flex space-x-2">
+                                                        <button 
+                                                            onClick={() => setStatus(student.admission_number, 'present')}
+                                                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                                attendanceStatus[student.admission_number] === 'present' 
+                                                                ? 'bg-green-600 text-white' 
+                                                                : 'bg-gray-200 text-gray-700'
+                                                            }`}
+                                                        >
+                                                            Present
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setStatus(student.admission_number, 'absent')}
+                                                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                                attendanceStatus[student.admission_number] === 'absent' 
+                                                                ? 'bg-red-600 text-white' 
+                                                                : 'bg-gray-200 text-gray-700'
+                                                            }`}
+                                                        >
+                                                            Absent
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg flex items-center justify-center disabled:bg-gray-400"
+                                >
+                                    {isSubmitting ? (
+                                        <i data-lucide="loader" className="w-5 h-5 mr-2 loading-spinner"></i>
+                                    ) : (
+                                        <i data-lucide="check-circle" className="w-5 h-5 mr-2"></i>
+                                    )}
+                                    Submit Attendance
+                                </button>
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        };
 
         // ===================================
-        // HOMEWORK PAGE
+        // HOMEWORK MODAL COMPONENT
+        // ===================================
+        const HomeworkModal = ({ onClose, classCode, onHomeworkAssigned }) => {
+            const [subject, setSubject] = useState(localStorage.getItem('teacherSubject') || '');
+            const [task, setTask] = useState('');
+            const [dueDate, setDueDate] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            useEffect(() => {
+                const savedSubject = localStorage.getItem('teacherSubject') || '';
+                setSubject(savedSubject);
+                
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                setDueDate(tomorrow.toISOString().split('T')[0]);
+            }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!subject || !task || !dueDate) {
+                    alert('Please fill in all fields.');
+                    return;
+                }
+                
+                try {
+                    setIsSubmitting(true);
+                    const classData = await fetchFromFirebase(`classes/${classCode}`);
+                    const homeworkNode = classData?.homework || {};
+                    
+                    const hwId = 'HW' + Date.now();
+                    const newHwObject = {
+                        id: hwId,
+                        subject: subject,
+                        task: task,
+                        due_date: dueDate,
+                        assigned_date: getTodayDateString(),
+                        assigned_by: localStorage.getItem('loggedInUserName') || 'Teacher'
+                    };
+                    
+                    const updatedHomework = {...homeworkNode, [hwId]: newHwObject};
+                    
+                    await writeToFirebase(`classes/${classCode}/homework`, updatedHomework);
+                    
+                    alert('Homework assigned successfully!');
+                    onHomeworkAssigned();
+                    
+                } catch (error) {
+                    console.error("Error assigning homework:", error);
+                    alert('Failed to assign homework.');
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Assign Homework</h2>
+                        <p className="text-sm text-gray-500 mb-4">For Class: <span className="font-semibold text-blue-600">{classCode}</span></p>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <input 
+                                    type="text"
+                                    value={subject}
+                                    onChange={(e) => setSubject(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="e.g., Mathematics"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Task</label>
+                                <textarea
+                                    value={task}
+                                    onChange={(e) => setTask(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    rows="3"
+                                    placeholder="e.g., Complete exercise 5.2"
+                                    required
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                <input 
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    required
+                                />
+                            </div>
+                            <div className="flex justify-end space-x-3 pt-4">
+                                <button 
+                                    type="button" 
+                                    onClick={onClose}
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
+                                >
+                                    {isSubmitting ? (
+                                        <i data-lucide="loader" className="w-5 h-5 mr-2 loading-spinner"></i>
+                                    ) : (
+                                        <i data-lucide="plus" className="w-5 h-5 mr-2"></i>
+                                    )}
+                                    Assign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===================================
+        // HOMEWORK PAGE (FULLY FUNCTIONAL)
         // ===================================
         const HomeworkPage = ({ onNavigate, currentPage, classCode: initialClassCode }) => {
             const [classes, setClasses] = useState([]);
             const [selectedClass, setSelectedClass] = useState(initialClassCode || '');
+            const [homework, setHomework] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [isModalOpen, setIsModalOpen] = useState(false);
 
             useEffect(() => {
                 fetchTeacherClasses();
@@ -923,103 +1339,128 @@
 
             const fetchTeacherClasses = async () => {
                 try {
+                    setLoading(true);
                     const teacherId = localStorage.getItem('teacherId') || 'T001';
                     const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
                     
-                    if (teacherData && teacherData.classes) {
-                        setClasses(teacherData.classes);
+                    if (teacherData && teacherData.assigned_classes) {
+                        const teacherClasses = teacherData.assigned_classes;
+                        setClasses(teacherClasses);
+
+                        let classToLoad = selectedClass;
+                        if (!classToLoad && teacherClasses.length > 0) {
+                            classToLoad = teacherClasses[0];
+                            setSelectedClass(classToLoad);
+                        }
                         
-                        if (!selectedClass && teacherData.classes.length > 0) {
-                            setSelectedClass(teacherData.classes[0]);
+                        if (classToLoad) {
+                            await fetchClassHomework(classToLoad);
                         }
                     }
                 } catch (error) {
                     console.error('Error fetching teacher classes:', error);
+                } finally {
+                    setLoading(false);
                 }
+            };
+
+            const fetchClassHomework = async (classCode) => {
+                try {
+                    setLoading(true);
+                    const classData = await fetchFromFirebase(`classes/${classCode}`) || {};
+                    
+                    const homeworkArray = Object.values(classData.homework || {});
+                    
+                    if (homeworkArray.length === 0) {
+                        setHomework([]);
+                        return;
+                    }
+                    
+                    const sortedHomework = homeworkArray
+                        .sort((a, b) => new Date(b.assigned_date) - new Date(a.assigned_date));
+                    
+                    setHomework(sortedHomework);
+                } catch (error) {
+                    console.error('Error fetching homework:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleClassChange = (classCode) => {
+                setSelectedClass(classCode);
+                fetchClassHomework(classCode);
+            };
+            
+            const handleHomeworkAssigned = () => {
+                setIsModalOpen(false);
+                fetchClassHomework(selectedClass);
             };
 
             return (
                 <div className="w-full bg-white mobile-container flex flex-col">
+                    {isModalOpen && (
+                        <HomeworkModal 
+                            onClose={() => setIsModalOpen(false)}
+                            classCode={selectedClass}
+                            onHomeworkAssigned={handleHomeworkAssigned}
+                        />
+                    )}
                     <PageHeader title="Homework" onBack={() => onNavigate('dashboard')} />
                     <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-                            <select 
-                                value={selectedClass}
-                                onChange={(e) => setSelectedClass(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                            >
-                                {classes.map(classCode => (
-                                    <option key={classCode} value={classCode}>Class {classCode}</option>
-                                ))}
-                            </select>
-                        </div>
-                        
-                        <div className="text-center py-6 text-gray-500">
-                            <i data-lucide="notebook-pen" className="w-12 h-12 mx-auto text-green-500"></i>
-                            <p className="mt-2">Homework feature loaded for Class {selectedClass}</p>
-                        </div>
-                        
-                        <button 
-                            onClick={() => alert('Assign homework feature coming soon!')}
-                            className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg flex items-center justify-center"
-                        >
-                            <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Assign New Homework
-                        </button>
-                    </main>
-                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
-                </div>
-            );
-        };
-
-        // ===================================
-        // TIMETABLE PAGE
-        // ===================================
-        const TimetablePage = ({ onNavigate, currentPage }) => {
-            const [activeDay, setActiveDay] = useState('monday');
-
-            const days = [
-                { id: 'monday', label: 'Monday' },
-                { id: 'tuesday', label: 'Tuesday' },
-                { id: 'wednesday', label: 'Wednesday' },
-                { id: 'thursday', label: 'Thursday' },
-                { id: 'friday', label: 'Friday' }
-            ];
-
-            return (
-                <div className="w-full bg-white mobile-container flex flex-col">
-                    <PageHeader title="Teaching Schedule" onBack={() => onNavigate('dashboard')} />
-                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                        <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
-                            {days.map(day => (
-                                <button
-                                    key={day.id}
-                                    onClick={() => setActiveDay(day.id)}
-                                    className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${activeDay === day.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                                >
-                                    {day.label}
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                            <div className="bg-gray-50 p-4 border-b">
-                                <h3 className="font-semibold text-gray-800 text-center">{days.find(d => d.id === activeDay)?.label}'s Schedule</h3>
-                            </div>
-                            <div className="divide-y divide-gray-200">
-                                {['Mathematics', 'Science', 'English', 'History', 'Geography'].map((subject, index) => (
-                                    <div key={index} className="p-4 flex items-center">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                                            <span className="font-bold text-sm text-gray-600">{index + 1}</span>
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-gray-800">{subject}</p>
-                                            <p className="text-xs text-gray-500">Period {index + 1} • 9:00 AM - 9:45 AM</p>
-                                        </div>
+                        {loading ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <>
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                                    <select 
+                                        value={selectedClass}
+                                        onChange={(e) => handleClassChange(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                    >
+                                        {classes.map(classCode => (
+                                            <option key={classCode} value={classCode}>Class {classCode}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                {homework.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {homework.map(hw => (
+                                            <div key={hw.id} className="bg-white p-4 rounded-lg border fade-in">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h4 className="font-semibold text-gray-800">{hw.subject}</h4>
+                                                    {hw.due_date && (
+                                                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                            Due: {formatDate(hw.due_date)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-gray-700 mb-2">{hw.task}</p>
+                                                <div className="flex justify-between items-center text-sm text-gray-500">
+                                                    <span>Assigned: {formatDate(hw.assigned_date)}</span>
+                                                    <span>{hw.assigned_by || 'You'}</span>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">
+                                        <i data-lucide="party-popper" className="w-12 h-12 mx-auto text-green-500"></i>
+                                        <p className="mt-2">No homework assigned!</p>
+                                    </div>
+                                )}
+                                
+                                <button 
+                                    onClick={() => setIsModalOpen(true)}
+                                    disabled={!selectedClass}
+                                    className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg flex items-center justify-center disabled:bg-gray-400"
+                                >
+                                    <i data-lucide="plus" className="w-5 h-5 mr-2"></i> Assign New Homework
+                                </button>
+                            </>
+                        )}
                     </main>
                     <AppFooter activePage={currentPage} onNavigate={onNavigate} />
                 </div>
@@ -1027,19 +1468,57 @@
         };
 
         // ===================================
-        // MAIN APP CONTROLLER
+        // MAIN APP CONTROLLER (UPDATED ROUTER - REMOVED TIMETABLE)
         // ===================================
         const App = () => {
             const [currentPage, setCurrentPage] = useState({ page: 'dashboard', props: {} });
             const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [isCheckingAuth, setIsCheckingAuth] = useState(true);
             
             useEffect(() => {
-                const teacherId = localStorage.getItem('teacherId');
-                if (!teacherId) { 
-                    window.location.href = 'index.html'; 
-                } else { 
-                    setIsAuthenticated(true); 
-                }
+                console.log('Teacher portal loading...');
+                console.log('Current localStorage teacherId:', localStorage.getItem('teacherId'));
+                
+                const checkAuth = async () => {
+                    const teacherId = localStorage.getItem('teacherId');
+                    
+                    if (!teacherId) { 
+                        console.log('No teacherId found in localStorage, redirecting to login');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 100);
+                        return;
+                    }
+                    
+                    try {
+                        console.log('Verifying teacher ID:', teacherId);
+                        const teacherData = await fetchFromFirebase(`teachers/${teacherId}`);
+                        
+                        if (!teacherData) {
+                            console.log('Teacher not found in database');
+                            localStorage.removeItem('teacherId');
+                            localStorage.removeItem('loggedInUserName');
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 100);
+                            return;
+                        }
+                        
+                        console.log('Authentication successful for:', teacherData.name);
+                        setIsAuthenticated(true);
+                    } catch (error) {
+                        console.error('Auth verification error:', error);
+                        localStorage.removeItem('teacherId');
+                        localStorage.removeItem('loggedInUserName');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 100);
+                    } finally {
+                        setIsCheckingAuth(false);
+                    }
+                };
+                
+                checkAuth();
             }, []);
             
             const navigate = (page, props = {}) => {
@@ -1047,13 +1526,20 @@
                 setCurrentPage({ page, props });
             };
             
-            if (!isAuthenticated) { 
+            if (isCheckingAuth) { 
                 return (
-                    <div className="w-full h-screen flex items-center justify-center">
-                        <LoadingSpinner />
+                    <div className="w-full h-screen flex items-center justify-center bg-gray-50">
+                        <div className="text-center">
+                            <i data-lucide="loader" className="w-8 h-8 text-blue-600 loading-spinner mx-auto"></i>
+                            <p className="mt-2 text-gray-600">Verifying your session...</p>
+                        </div>
                     </div>
                 );
-             }
+            }
+            
+            if (!isAuthenticated) {
+                return null;
+            }
             
             const renderPage = () => {
                 const { page, props } = currentPage;
@@ -1067,12 +1553,15 @@
                         return <ProfilePage onNavigate={navigate} />;
                     case 'classes': 
                         return <ClassesPage onNavigate={navigate} currentPage={page} />;
+                    case 'classRoster':
+                        return <ClassRosterPage onNavigate={navigate} classCode={props.classCode} />;
                     case 'attendance': 
                         return <AttendancePage onNavigate={navigate} currentPage={page} classCode={props.classCode} />;
+                    case 'markAttendance':
+                        return <MarkAttendancePage onNavigate={navigate} classCode={props.classCode} />;
                     case 'homework': 
                         return <HomeworkPage onNavigate={navigate} currentPage={page} classCode={props.classCode} />;
-                    case 'timetable': 
-                        return <TimetablePage onNavigate={navigate} currentPage={page} />;
+                    // Removed: case 'timetable': 
                     default: 
                         return <DashboardPage onNavigate={navigate} currentPage="dashboard" />;
                 }
@@ -1083,6 +1572,13 @@
 
         // Initialize icons and render app
         ReactDOM.render(<App />, document.getElementById('root'));
+        
+        // Create icons after render
+        setTimeout(() => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }, 100);
     </script>
 </body>
 </html>
