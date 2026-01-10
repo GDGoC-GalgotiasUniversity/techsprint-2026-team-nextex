@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduManager - Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root { --brand-blue: #3B82F6; }
+        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; }
+        .mobile-container { max-width: 420px; min-height: 100vh; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .attendance-present { background-color: #DCFCE7; color: #166534; }
+        .attendance-absent { background-color: #FEE2E2; color: #991B1B; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1jyfjfNrBAKSIFPFF5rgZEwzlJeLoqjA",
+            authDomain: "qwerty1-6fc97.firebaseapp.com",
+            databaseURL: "https://qwerty1-6fc97-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "qwerty1-6fc97",
+            storageBucket: "qwerty1-6fc97.appspot.com",
+            messagingSenderId: "334235813327",
+            appId: "1:334235813327:web:95d7e601403f60f0413eba",
+            measurementId: "G-C4W4SC89NH"
+        };
+
+        // Initialize Firebase safely
+        let database;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            } else {
+                firebase.app(); 
+            }
+            database = firebase.database();
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        // --- Utility Functions ---
+        const formatDate = (dateString) => {
+            if (!dateString) return 'None';
+            try {
+                if (new Date(dateString).toString() === 'Invalid Date') return dateString;
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            } catch (e) {
+                return dateString;
+            }
+        };
+
+        const getTodayDateString = () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const fetchFromFirebase = async (path) => {
+            try {
+                console.log(`Fetching from Firebase: ${path}`);
+                const snapshot = await database.ref(path).once('value');
+                return snapshot.val();
+            } catch (error) {
+                console.error('Error fetching from Firebase:', error);
+                return null;
+            }
+        };
+
+        // --- Shared Components ---
+        const LoadingSpinner = () => (
+            <div className="flex justify-center items-center py-4">
+                <i data-lucide="loader" className="w-6 h-6 text-blue-600 loading-spinner"></i>
+            </div>
+        );
+
+        const PageHeader = ({ title, onBack }) => (
+            <header className="flex items-center p-4 shadow-md" style={{ backgroundColor: 'var(--brand-blue)' }}>
+                <a href="#" onClick={(e) => { e.preventDefault(); onBack(); }} className="text-white">
+                    <i data-lucide="arrow-left"></i>
+                </a>
+                <h1 className="text-white text-xl font-bold ml-4 flex-1">{title}</h1>
+            </header>
+        );
+
+        const StatCard = ({ label, value, color, icon }) => (
+            <div className={`bg-${color}-100 p-4 rounded-lg text-center`}>
+                {icon && <i data-lucide={icon} className={`w-6 h-6 mx-auto mb-2 text-${color}-600`}></i>}
+                <p className={`text-sm text-${color}-800`}>{label}</p>
+                <p className={`text-2xl font-bold text-${color}-900`}>{value}</p>
+            </div>
+        );
+
+        const AnnouncementCard = ({ title, content, date, target }) => (
+            <div className="bg-white p-4 rounded-lg shadow-sm border fade-in">
+                <div className="flex justify-between items-start">
+                    <h4 className="font-semibold text-gray-800">{title}</h4>
+                    {target && target !== 'all' && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{target}</span>
+                    )}
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{content}</p>
+                <p className="text-xs text-gray-400 mt-2">{formatDate(date)}</p>
+            </div>
+        );
+
+        const AppFooter = ({ activePage, onNavigate }) => {
+            useEffect(() => { if (window.lucide) lucide.createIcons(); }, [activePage]);
+            
+            const navItems = [ 
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
+                { id: 'attendance', icon: 'user-check', label: 'Attendance' },
+                { id: 'grades', icon: 'book-check', label: 'Grades' }, 
+                { id: 'homework', icon: 'notebook-pen', label: 'Homework' },
+                { id: 'timetable', icon: 'calendar', label: 'Timetable' }
+            ];
+            
+            return ( 
+                <footer className="grid grid-cols-5 gap-1 p-2 border-t bg-white sticky bottom-0"> 
+                    {navItems.map(item => { 
+                        const isActive = activePage === item.id; 
+                        return ( 
+                            <a href="#" key={item.id} onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
+                                className={`flex flex-col items-center p-2 rounded-lg ${isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}> 
+                                <i data-lucide={item.icon} className="w-5 h-5"></i>
+                                <span className="text-xs mt-1">{item.label}</span> 
+                            </a> 
+                        ); 
+                    })} 
+                </footer> 
+            );
+        };
+
+        //==================================
+        // DASHBOARD PAGE (Fixed for Object Data)
+        //==================================
+        const DashboardPage = ({ onNavigate, currentPage }) => {
+            const [dashboardStats, setDashboardStats] = useState([
+                { label: 'Attendance', value: '...', color: 'blue', icon: 'user-check' },
+                { label: 'Today\'s Tasks', value: '...', color: 'green', icon: 'check-circle' },
+                { label: 'Last Grade', value: '...', color: 'yellow', icon: 'award' },
+                { label: 'Upcoming Test', value: '...', color: 'red', icon: 'calendar' }
+            ]);
+            const [announcements, setAnnouncements] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [studentName, setStudentName] = useState('Student');
+            
+            const studentClass = localStorage.getItem('studentClass') || '10A';
+            const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
+
+            useEffect(() => {
+                fetchDashboardData();
+            }, []);
+
+            const fetchDashboardData = async () => {
+                try {
+                    setLoading(true);
+                    
+                    // 1. Name
+                    const storedName = localStorage.getItem('loggedInUserName');
+                    if (storedName) setStudentName(storedName);
+                    
+                    // 2. Announcements
+                    const announcementsData = await fetchFromFirebase('announcements/announcements');
+                    const allAnnouncements = announcementsData || [];
+                    const filteredAnnouncements = allAnnouncements.filter(ann => 
+                        ann.target_audience === 'all' || ann.target_audience === studentClass
+                    ).slice(0, 3);
+                    setAnnouncements(filteredAnnouncements);
+
+                    // 3. Class Data
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
+                    
+                    // --- Calculations ---
+                    
+                    // Attendance
+                    let attendancePercentage = '0%';
+                    if (classData.attendance) {
+                        const attendanceArray = Object.values(classData.attendance); // FIX: Object to Array
+                        const studentAttendance = attendanceArray.filter(a => a.student_id === studentId);
+                        if (studentAttendance.length > 0) {
+                            const presentDays = studentAttendance.filter(a => a.status === 'present').length;
+                            attendancePercentage = Math.round((presentDays / studentAttendance.length) * 100) + '%';
+                        }
+                    }
+
+                    // Homework (Today's Tasks)
+                    let todaysTasks = 0;
+                    if (classData.homework) {
+                        const homeworkArray = Object.values(classData.homework); // FIX: Object to Array
+                        const todayString = getTodayDateString();
+                        todaysTasks = homeworkArray.filter(h => h.assigned_date === todayString).length;
+                    }
+
+                    // Last Grade
+                    let lastGrade = 'N/A';
+                    if (classData.grades) {
+                        const gradesArray = Array.isArray(classData.grades) ? classData.grades : Object.values(classData.grades);
+                        const studentGrades = gradesArray.filter(g => g.student_id === studentId);
+                        if (studentGrades.length > 0) {
+                            studentGrades.sort((a, b) => new Date(b.date) - new Date(a.date));
+                            lastGrade = studentGrades[0].grade;
+                        }
+                    }
+
+                    // Upcoming Test
+                    let upcomingTest = 'None';
+                    if (classData.exams) {
+                        const examsArray = Array.isArray(classData.exams) ? classData.exams : Object.values(classData.exams);
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        const upcomingExams = examsArray.filter(e => new Date(e.date) >= today);
+                        if (upcomingExams.length > 0) {
+                            upcomingExams.sort((a, b) => new Date(a.date) - new Date(b.date));
+                            upcomingTest = upcomingExams[0].subject;
+                        }
+                    }
+
+                    setDashboardStats([
+                        { label: 'Attendance', value: attendancePercentage, color: 'blue', icon: 'user-check' },
+                        { label: 'Today\'s Tasks', value: todaysTasks, color: 'green', icon: 'check-circle' },
+                        { label: 'Last Grade', value: lastGrade, color: 'yellow', icon: 'award' },
+                        { label: 'Upcoming Test', value: upcomingTest, color: 'red', icon: 'calendar' }
+                    ]);
+
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <header className="flex items-center justify-between p-4 shadow-md" style={{ backgroundColor: 'var(--brand-blue)' }}>
+                        <a href="#" onClick={(e) => { e.preventDefault(); onNavigate('profile'); }} className="text-white">
+                            <i data-lucide="user-circle"></i>
+                        </a>
+                        <h1 className="text-white text-xl font-bold">Dashboard</h1>
+                        <div className="w-6"></div>
+                    </header>
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg mb-6">
+                            <h2 className="text-xl font-bold">Good morning, {studentName}!</h2>
+                            <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                        
+                        <h3 className="text-lg font-semibold text-gray-700 mb-3">Your Overview</h3>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            {dashboardStats.map(stat => <StatCard key={stat.label} {...stat} />)}
+                        </div>
+                        
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-700">Recent Announcements</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {loading ? <LoadingSpinner /> : announcements.length > 0 ? (
+                                announcements.map((item, index) => (
+                                    <AnnouncementCard key={index} title={item.title} content={item.content} date={item.created_at} target={item.target_audience} />
+                                ))
+                            ) : (
+                                <div className="text-center py-4 text-gray-500">No announcements found</div>
+                            )}
+                        </div>
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // PROFILE PAGE (Fixed Path)
+        //==================================
+        const ProfilePage = ({ onNavigate }) => {
+            const [studentData, setStudentData] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchStudentData();
+            }, []);
+
+            const fetchStudentData = async () => {
+                try {
+                    setLoading(true);
+                    const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
+                    // Fetch direct from students node
+                    const data = await fetchFromFirebase(`students/${studentId}`);
+                    setStudentData(data);
+                } catch (error) {
+                    console.error('Error fetching student data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleLogout = () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="My Profile" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? <LoadingSpinner /> : studentData ? (
+                            <>
+                                <div className="bg-white rounded-xl shadow-sm p-6 mb-6 text-center border">
+                                    <i data-lucide="user-circle" className="w-24 h-24 mx-auto mb-4 text-gray-300"></i>
+                                    <h2 className="text-2xl font-bold text-gray-800">{studentData.name || 'Student'}</h2>
+                                    <p className="text-gray-500">Class {studentData.class}</p>
+                                </div>
+                                <div className="bg-white rounded-xl shadow-sm p-6 border text-gray-800 space-y-4">
+                                    {[
+                                        ['Admission Number', studentData.admission_number],
+                                        ['Email', studentData.email],
+                                        ['Class', studentData.class],
+                                        ['Roll No.', studentData.rollNo],
+                                        ['Date of Birth', formatDate(studentData.dateOfBirth)],
+                                        ['Father\'s Name', studentData.fatherName],
+                                        ['Mother\'s Name', studentData.motherName],
+                                        ['Phone', studentData.phone],
+                                        ['Address', studentData.address]
+                                    ].map(([label, value]) => (
+                                        value && (
+                                            <div key={label}>
+                                                <label className="block text-sm font-medium text-gray-500">{label}</label>
+                                                <p className="font-semibold">{value}</p>
+                                                <div className="border-t my-2"></div>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                                <button onClick={handleLogout} className="w-full mt-6 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="log-out" className="w-5 h-5 mr-2"></i> Logout
+                                </button>
+                            </>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">Student data not found.</div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        //==================================
+        // ATTENDANCE PAGE (Fixed Object.values)
+        //==================================
+        const AttendancePage = ({ onNavigate, currentPage }) => {
+            const [attendance, setAttendance] = useState([]);
+            const [stats, setStats] = useState({ present: 0, percentage: 0 });
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchAttendance();
+            }, []);
+            
+            const fetchAttendance = async () => {
+                try {
+                    setLoading(true);
+                    const studentClass = localStorage.getItem('studentClass') || '10A';
+                    const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
+                    
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`);
+                    
+                    if (!classData || !classData.attendance) {
+                        setAttendance([]);
+                        return;
+                    }
+
+                    // FIX: Convert Object to Array
+                    const attendanceArray = Object.values(classData.attendance);
+                    
+                    const studentAttendance = attendanceArray
+                        .filter(a => a && a.student_id === studentId)
+                        .sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    setAttendance(studentAttendance);
+                    
+                    const present = studentAttendance.filter(a => a.status === 'present').length;
+                    const total = studentAttendance.length;
+                    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+                    setStats({ present, percentage });
+                    
+                } catch (error) {
+                    console.error('Error fetching attendance:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Attendance" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? <LoadingSpinner /> : (
+                            <>
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="bg-blue-100 p-4 rounded-lg text-center">
+                                        <p className="text-sm text-blue-800">Percentage</p>
+                                        <p className="text-3xl font-bold text-blue-900">{stats.percentage}%</p>
+                                    </div>
+                                    <div className="bg-green-100 p-4 rounded-lg text-center">
+                                        <p className="text-sm text-green-800">Present Days</p>
+                                        <p className="text-3xl font-bold text-green-900">{stats.present}</p>
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-700 mb-3">Daily Log</h3>
+                                {attendance.length > 0 ? (
+                                    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                                        <ul className="divide-y divide-gray-200">
+                                            {attendance.map((record, index) => (
+                                                <li key={index} className="p-4 flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-medium text-gray-800">{formatDate(record.date)}</p>
+                                                    </div>
+                                                    <span className={`flex items-center text-sm font-semibold px-3 py-1 rounded-full ${record.status === 'present' ? 'attendance-present' : 'attendance-absent'}`}>
+                                                        {record.status === 'present' ? 'Present' : 'Absent'}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">No attendance records found.</div>
+                                )}
+                            </>
+                        )}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // HOMEWORK PAGE (Fixed Object.values)
+        //==================================
+        const HomeworkPage = ({ onNavigate, currentPage }) => {
+            const [groupedHomework, setGroupedHomework] = useState({});
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchHomework();
+            }, []);
+
+            const fetchHomework = async () => {
+                try {
+                    setLoading(true);
+                    const studentClass = localStorage.getItem('studentClass') || '10A';
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`);
+                    
+                    if (!classData || !classData.homework) {
+                        setGroupedHomework({});
+                        return;
+                    }
+                    
+                    // FIX: Convert Object to Array
+                    const homeworkArray = Object.values(classData.homework);
+                    
+                    const groups = homeworkArray.reduce((acc, hw) => {
+                        const date = hw.assigned_date;
+                        if (!acc[date]) acc[date] = [];
+                        acc[date].push(hw);
+                        return acc;
+                    }, {});
+                    
+                    setGroupedHomework(groups);
+                } catch (error) {
+                    console.error('Error fetching homework:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const sortedDates = Object.keys(groupedHomework).sort((a, b) => new Date(b) - new Date(a));
+            
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Homework" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? <LoadingSpinner /> : sortedDates.length > 0 ? (
+                            <div className="space-y-6">
+                                {sortedDates.map(date => (
+                                    <div key={date} className="fade-in">
+                                        <h3 className="font-bold text-gray-800 pb-2 border-b mb-3">{formatDate(date)}</h3>
+                                        <div className="space-y-3">
+                                            {groupedHomework[date].map((hw, idx) => (
+                                                <div key={idx} className="bg-white p-4 rounded-lg border">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h4 className="font-semibold text-gray-800">{hw.subject}</h4>
+                                                        {hw.due_date && (
+                                                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Due: {formatDate(hw.due_date)}</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-gray-700">{hw.task}</p>
+                                                    {hw.assigned_by && <p className="text-xs text-gray-400 mt-2">By: {hw.assigned_by}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">No homework found!</div>
+                        )}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // GRADES PAGE
+        //==================================
+        const GradesPage = ({ onNavigate, currentPage }) => {
+            const [activeExam, setActiveExam] = useState('PT1');
+            const [grades, setGrades] = useState({});
+            const [loading, setLoading] = useState(true);
+            const examTypes = [
+                { id: 'PT1', label: 'Periodic Test 1' }, 
+                { id: 'PT2', label: 'Periodic Test 2' }, 
+                { id: 'T1', label: 'Term 1' }
+            ];
+
+            useEffect(() => { fetchGrades(); }, []);
+
+            const fetchGrades = async () => {
+                try {
+                    setLoading(true);
+                    const studentClass = localStorage.getItem('studentClass') || '10A';
+                    const studentId = localStorage.getItem('studentSchoolId') || 'STU0001';
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
+                    
+                    if (!classData.grades) { setGrades({}); return; }
+                    
+                    // Handle both Array and Object structures for Grades
+                    const gradesArray = Array.isArray(classData.grades) ? classData.grades : Object.values(classData.grades);
+                    const studentGrades = gradesArray.filter(grade => grade.student_id === studentId);
+                    
+                    const organizedGrades = {};
+                    examTypes.forEach(exam => {
+                        organizedGrades[exam.id] = studentGrades.filter(grade => grade.exam_type === exam.id);
+                    });
+                    setGrades(organizedGrades);
+                } catch (error) { console.error('Error fetching grades:', error); } finally { setLoading(false); }
+            };
+
+            const gradesForExam = grades[activeExam] || [];
+            
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="My Grades" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
+                            {examTypes.map(exam => (
+                                <button key={exam.id} onClick={() => setActiveExam(exam.id)}
+                                    className={`px-4 py-2 rounded-full mr-2 whitespace-nowrap text-sm font-medium ${activeExam === exam.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                    {exam.label}
+                                </button>
+                            ))}
+                        </div>
+                        {loading ? <LoadingSpinner /> : gradesForExam.length > 0 ? (
+                            <div className="bg-white rounded-lg shadow-sm overflow-hidden border">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Subject</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Marks</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-500">Grade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {gradesForExam.map((grade, idx) => (
+                                            <tr key={idx}>
+                                                <td className="p-3 font-medium">{grade.subject}</td>
+                                                <td className="p-3 font-bold">{grade.marks}/{grade.total_marks || 100}</td>
+                                                <td className="p-3 text-green-600 font-medium">{grade.grade}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-gray-500">No grades available for this exam.</div>
+                        )}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // TIMETABLE PAGE
+        //==================================
+        const TimetablePage = ({ onNavigate, currentPage }) => {
+            const [timetable, setTimetable] = useState({});
+            const [loading, setLoading] = useState(true);
+            const [activeDay, setActiveDay] = useState('monday');
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+            useEffect(() => { fetchTimetable(); }, []);
+
+            const fetchTimetable = async () => {
+                try {
+                    setLoading(true);
+                    const studentClass = localStorage.getItem('studentClass') || '10A';
+                    const classData = await fetchFromFirebase(`classes/${studentClass}`) || {};
+                    if (classData.timetable) setTimetable(classData.timetable);
+                } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
+            };
+
+            return (
+                <div className="w-full bg-white mobile-container flex flex-col">
+                    <PageHeader title="Timetable" onBack={() => onNavigate('dashboard')} />
+                    <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                        {loading ? <LoadingSpinner /> : Object.keys(timetable).length > 0 ? (
+                            <>
+                                <div className="mb-6 flex overflow-x-auto pb-2 scrollbar-hide">
+                                    {days.map(day => (
+                                        <button key={day} onClick={() => setActiveDay(day)}
+                                            className={`px-4 py-2 rounded-full mr-2 capitalize text-sm font-medium ${activeDay === day ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                            {day}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="bg-white rounded-lg shadow-sm border">
+                                    <div className="bg-gray-50 p-3 border-b text-center font-semibold capitalize">{activeDay}</div>
+                                    <div className="divide-y divide-gray-200">
+                                        {timetable[activeDay]?.map((subject, idx) => (
+                                            <div key={idx} className="p-4 flex items-center">
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 text-blue-600 font-bold text-sm">{idx + 1}</div>
+                                                <div>
+                                                    <p className="font-medium text-gray-800">{subject}</p>
+                                                    <p className="text-xs text-gray-500">Period {idx + 1}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        ) : <div className="text-center py-6 text-gray-500">No timetable available.</div>}
+                    </main>
+                    <AppFooter activePage={currentPage} onNavigate={onNavigate} />
+                </div>
+            );
+        };
+
+        //==================================
+        // MAIN APP CONTROLLER
+        //==================================
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('dashboard');
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            
+            useEffect(() => {
+                // Initial Auth Check
+                const userId = localStorage.getItem('loggedInUserId');
+                if (!userId) { 
+                    window.location.href = 'index.html'; 
+                } else { 
+                    setIsAuthenticated(true); 
+                }
+                
+                // Initialize Icons
+                if (window.lucide) lucide.createIcons();
+            }, []);
+            
+            const navigate = (page) => {
+                setCurrentPage(page);
+                setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
+            };
+            
+            if (!isAuthenticated) return <div className="w-full h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+            
+            const pages = {
+                dashboard: <DashboardPage onNavigate={navigate} currentPage={currentPage} />,
+                profile: <ProfilePage onNavigate={navigate} />,
+                attendance: <AttendancePage onNavigate={navigate} currentPage={currentPage} />,
+                grades: <GradesPage onNavigate={navigate} currentPage={currentPage} />,
+                homework: <HomeworkPage onNavigate={navigate} currentPage={currentPage} />,
+                timetable: <TimetablePage onNavigate={navigate} currentPage={currentPage} />
+            };
+
+            return <div>{pages[currentPage] || pages['dashboard']}</div>;
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
