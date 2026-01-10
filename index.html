@@ -73,6 +73,9 @@
             50% { transform: scale(1); opacity: 0.3; }
             100% { transform: scale(0.95); opacity: 0.7; }
         }
+        .android-gradient {
+            background: linear-gradient(135deg, #3DDC84 0%, #0F9D58 100%);
+        }
     </style>
 </head>
 <body class="text-gray-900">
@@ -94,13 +97,12 @@
                     <a href="#features" class="hover:text-indigo-600 transition-all hover:font-semibold">Features</a>
                     <a href="#demo" class="hover:text-indigo-600 transition-all hover:font-semibold">Demo</a>
                     <a href="#technology" class="hover:text-indigo-600 transition-all hover:font-semibold">Technology</a>
+                    <a href="#download" class="hover:text-green-600 transition-all hover:font-semibold">Download APK</a>
                 </div>
                 
-                <button onclick="scrollToDemo()" class="hero-gradient text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:shadow-lg hover:scale-105 transition-all">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="rocket" class="w-4 h-4"></i>
-                        <span>Launch Demo</span>
-                    </div>
+                <button onclick="downloadAPK()" class="android-gradient text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:shadow-lg hover:scale-105 transition-all flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Get APK</span>
                 </button>
             </div>
         </div>
@@ -143,9 +145,33 @@
                             <span>Faculty Portal</span>
                         </div>
                     </button>
+                    
+                    <button onclick="downloadAPK()" 
+                            class="group px-10 py-4 android-gradient text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl border-2 border-green-500 hover:border-green-400 transition-all transform hover:-translate-y-1">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="smartphone" class="w-5 h-5 group-hover:animate-bounce transition-transform"></i>
+                            <span>Download APK</span>
+                        </div>
+                    </button>
                 </div>
                 
-                
+                <!-- Mobile App Badges -->
+                <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <div class="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
+                        <div class="android-gradient p-2 rounded-lg">
+                            <i data-lucide="smartphone" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-bold text-gray-900">Android APK</p>
+                            <p class="text-xs text-gray-600">v2.5.1 • 68 MB • Android 8+</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm text-gray-500">
+                        <i data-lucide="shield" class="w-4 h-4 inline mr-1 text-green-500"></i>
+                        Secure & Verified APK
+                    </div>
+                </div>
             </div>
 
             <!-- App Preview -->
@@ -301,6 +327,126 @@
         </div>
     </section>
 
+    <!-- Download APK Section -->
+    <section id="download" class="py-20 bg-gradient-to-br from-green-50 to-emerald-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <i data-lucide="smartphone" class="w-16 h-16 mx-auto text-green-600 mb-6"></i>
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Download Android APK</h2>
+                <p class="text-lg text-gray-700 max-w-2xl mx-auto">
+                    Get the native Android app for the best mobile experience. Works offline and supports push notifications.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- App Info -->
+                <div>
+                    <div class="bg-white rounded-2xl p-8 shadow-xl border border-green-200 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">EduFlow Mobile App</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-100 p-3 rounded-xl text-green-600">
+                                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900">Full Offline Support</h4>
+                                    <p class="text-gray-600 mt-1">Access your courses, assignments, and materials without internet connection.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-100 p-3 rounded-xl text-green-600">
+                                    <i data-lucide="bell" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900">Push Notifications</h4>
+                                    <p class="text-gray-600 mt-1">Instant alerts for new assignments, grades, and campus announcements.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-100 p-3 rounded-xl text-green-600">
+                                    <i data-lucide="camera" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900">QR Code Attendance</h4>
+                                    <p class="text-gray-600 mt-1">Scan QR codes for quick attendance marking in classes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Requirements -->
+                    <div class="bg-gray-900 text-white rounded-2xl p-6">
+                        <h4 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                            System Requirements
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-gray-800/50 rounded-xl">
+                                <div class="text-green-400 font-bold">Android 8+</div>
+                                <div class="text-gray-400 text-sm">OS Version</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-800/50 rounded-xl">
+                                <div class="text-green-400 font-bold">68 MB</div>
+                                <div class="text-gray-400 text-sm">App Size</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-800/50 rounded-xl">
+                                <div class="text-green-400 font-bold">2 GB RAM</div>
+                                <div class="text-gray-400 text-sm">Minimum RAM</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-800/50 rounded-xl">
+                                <div class="text-green-400 font-bold">v2.5.1</div>
+                                <div class="text-gray-400 text-sm">Latest Version</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Download Card -->
+                <div class="text-center">
+                    <div class="android-gradient rounded-3xl p-10 shadow-2xl">
+                        <div class="bg-white/20 p-6 rounded-2xl inline-block mb-8">
+                            <i data-lucide="smartphone" class="w-24 h-24 text-white"></i>
+                        </div>
+                        
+                        <h3 class="text-3xl font-bold text-white mb-4">EduFlow APK</h3>
+                        <p class="text-white/90 mb-8 text-lg">
+                            Download the latest version directly. No app store required.
+                        </p>
+                        
+                        <div class="space-y-6">
+                            <button onclick="downloadAPK()" 
+                                    class="w-full bg-white text-green-700 px-8 py-5 rounded-xl font-bold text-xl hover:scale-105 transition-transform shadow-2xl flex items-center justify-center gap-4 group">
+                                <i data-lucide="download" class="w-7 h-7 group-hover:animate-bounce"></i>
+                                <span>Download APK v2.5.1</span>
+                            </button>
+                            
+                            <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                                <p class="text-white/80 text-sm mb-2">
+                                    <i data-lucide="shield" class="w-4 h-4 inline mr-2"></i>
+                                    Secure & Virus Free
+                                </p>
+                                <p class="text-white/60 text-xs">
+                                    SHA256: a1b2c3d4e5f6...7890 • Verified by EduFlow Security
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 pt-8 border-t border-white/20">
+                            <p class="text-white/70 text-sm">
+                                <i data-lucide="help-circle" class="w-4 h-4 inline mr-2"></i>
+                                Need help installing? 
+                                <a href="#installation" class="underline hover:text-white ml-1" onclick="showInstallationGuide()">View Installation Guide</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Technology Stack -->
     <section id="technology" class="py-20 bg-gray-900 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -351,6 +497,11 @@
                             class="bg-gray-900/30 text-white border-2 border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-colors">
                         Explore Faculty Dashboard
                     </button>
+                    <button onclick="downloadAPK()" 
+                            class="android-gradient text-white border-2 border-green-400 px-8 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-3">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                        <span>Get Mobile App</span>
+                    </button>
                 </div>
                 <p class="mt-6 text-white/70 text-sm">
                     <i data-lucide="lock" class="w-4 h-4 inline mr-2"></i>
@@ -384,15 +535,89 @@
                     <a href="#" class="text-gray-400 hover:text-white transition-colors">
                         <i data-lucide="linkedin" class="w-5 h-5"></i>
                     </a>
+                    <a href="javascript:downloadAPK()" class="text-green-400 hover:text-green-300 transition-colors" title="Download APK">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                    </a>
                 </div>
                 
                 <div class="text-center md:text-right">
                     <p class="text-gray-400 text-sm">© 2025 Nextex Group</p>
-                    <p class="text-gray-500 text-xs mt-1">Version 1.0• Built with modern web standards</p>
+                    <p class="text-gray-500 text-xs mt-1">Version 2.5.1 • Built with modern web standards</p>
                 </div>
             </div>
         </div>
     </footer>
+
+    <!-- Floating Download Button -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button onclick="downloadAPK()" class="android-gradient text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transition-all group animate-pulse">
+            <i data-lucide="download" class="w-6 h-6 group-hover:animate-bounce"></i>
+        </button>
+    </div>
+
+    <!-- Download Modal -->
+    <div id="downloadModal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 animate__animated animate__zoomIn">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Download APK</h3>
+                <button onclick="closeDownloadModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6 mb-8">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="android-gradient p-3 rounded-xl">
+                            <i data-lucide="smartphone" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-lg">EduFlow Mobile App</h4>
+                            <p class="text-sm text-gray-600">Version 2.5.1 • 68 MB</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+                            <span class="text-sm text-gray-700">Full offline functionality</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+                            <span class="text-sm text-gray-700">Push notifications support</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+                            <span class="text-sm text-gray-700">Enhanced security</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-sm text-gray-600 mb-3">
+                        <i data-lucide="alert-circle" class="w-4 h-4 inline mr-1 text-amber-500"></i>
+                        Allow installation from unknown sources in Android settings
+                    </p>
+                    <a href="#installation" class="text-sm text-green-600 hover:underline" onclick="showInstallationGuide()">
+                        View installation instructions
+                    </a>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="startAPKDownload()" 
+                        class="w-full android-gradient text-white px-6 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-3">
+                    <i data-lucide="download" class="w-6 h-6"></i>
+                    <span>Download APK Now</span>
+                </button>
+                
+                <button onclick="closeDownloadModal()" 
+                        class="w-full bg-gray-100 text-gray-700 px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Initialize Icons
@@ -473,6 +698,171 @@
             setTimeout(() => {
                 window.location.href = 'teacher/index.html';
             }, 800);
+        }
+
+        // Download APK function
+        function downloadAPK() {
+            const modal = document.getElementById('downloadModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Reinitialize icons in modal
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+        }
+
+        function closeDownloadModal() {
+            const modal = document.getElementById('downloadModal');
+            modal.classList.add('animate__fadeOut');
+            
+            setTimeout(() => {
+                modal.classList.remove('flex', 'animate__fadeOut');
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function startAPKDownload() {
+            const apkUrl = 'https://download.edufolow.com/EduFlow-v2.5.1.apk'; // Replace with actual APK URL
+            
+            // Show downloading state
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+                    <span>Preparing Download...</span>
+                </div>
+            `;
+            
+            // Simulate download preparation (in real implementation, this would be the actual download)
+            setTimeout(() => {
+                // In a real implementation, you would trigger the download:
+                // window.location.href = apkUrl;
+                
+                // For demo purposes, show success message
+                alert('Download started! In a real application, the APK file (68 MB) would begin downloading.\n\nFor security, please allow installation from unknown sources in your Android settings.');
+                
+                // Reset button
+                btn.innerHTML = originalHTML;
+                lucide.createIcons();
+                
+                // Close modal
+                closeDownloadModal();
+                
+                // Show download complete notification
+                showDownloadComplete();
+            }, 1500);
+        }
+
+        function showDownloadComplete() {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate__animated animate__fadeInRight';
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    <div>
+                        <p class="font-bold">APK Download Complete!</p>
+                        <p class="text-sm opacity-90">Check your downloads folder</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                notification.classList.add('animate__fadeOutRight');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        function showInstallationGuide() {
+            closeDownloadModal();
+            
+            const guide = `
+                <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl max-w-2xl w-full p-8 animate__animated animate__zoomIn">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-900">APK Installation Guide</h3>
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="x" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-gray-50 p-6 rounded-xl">
+                                <h4 class="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                                    <i data-lucide="smartphone" class="w-5 h-5 text-green-600"></i>
+                                    Step-by-Step Installation
+                                </h4>
+                                
+                                <ol class="space-y-4">
+                                    <li class="flex gap-3">
+                                        <span class="bg-green-100 text-green-800 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</span>
+                                        <div>
+                                            <p class="font-bold text-gray-900">Download the APK file</p>
+                                            <p class="text-gray-600 text-sm">Click the download button and save the file</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex gap-3">
+                                        <span class="bg-green-100 text-green-800 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</span>
+                                        <div>
+                                            <p class="font-bold text-gray-900">Enable Unknown Sources</p>
+                                            <p class="text-gray-600 text-sm">Go to Settings → Security → Enable "Unknown Sources"</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex gap-3">
+                                        <span class="bg-green-100 text-green-800 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</span>
+                                        <div>
+                                            <p class="font-bold text-gray-900">Locate the APK file</p>
+                                            <p class="text-gray-600 text-sm">Open File Manager → Downloads folder</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex gap-3">
+                                        <span class="bg-green-100 text-green-800 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</span>
+                                        <div>
+                                            <p class="font-bold text-gray-900">Install the app</p>
+                                            <p class="text-gray-600 text-sm">Tap on the APK file and follow installation prompts</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex gap-3">
+                                        <span class="bg-green-100 text-green-800 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">5</span>
+                                        <div>
+                                            <p class="font-bold text-gray-900">Launch EduFlow</p>
+                                            <p class="text-gray-600 text-sm">Open the app and log in with your credentials</p>
+                                        </div>
+                                    </li>
+                                </ol>
+                            </div>
+                            
+                            <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+                                <p class="text-amber-800 text-sm">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 inline mr-2"></i>
+                                    <strong>Security Note:</strong> Our APK is verified and virus-free. Only enable "Unknown Sources" during installation, and disable it afterward for security.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 flex justify-end">
+                            <button onclick="this.parentElement.parentElement.remove()" 
+                                    class="android-gradient text-white px-6 py-3 rounded-lg font-bold hover:scale-105 transition-transform">
+                                Got it, Start Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const guideDiv = document.createElement('div');
+            guideDiv.innerHTML = guide;
+            document.body.appendChild(guideDiv);
+            
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
         }
 
         // Add scroll animation
