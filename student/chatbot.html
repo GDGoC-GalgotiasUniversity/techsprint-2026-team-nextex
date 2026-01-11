@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .header p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f8fafc;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin: 5px 0;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: #4f46e5;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background: white;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .typing {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            width: fit-content;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .typing span {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0% { transform: translateY(0px); }
+            25% { transform: translateY(-5px); }
+            50% { transform: translateY(0px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+        
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #4f46e5;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .info {
+            background: #f0f9ff;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 15px;
+            font-size: 0.8rem;
+            color: #0369a1;
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }
+        
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .example-btn {
+            background: #e0e7ff;
+            border: 1px solid #a5b4fc;
+            color: #4f46e5;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #c7d2fe;
+        }
+        
+        /* Scrollbar styling */
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h1>AI assitant</h1>
+            <p>Powered by Gemini AI</p>
+        </div>
+        
+        <div class="info">
+            Ask me anything about your school project!
+            <div class="examples">
+                <div class="example-btn" data-question="Explain photosynthesis">Science</div>
+                <div class="example-btn" data-question="Help with math homework">Math</div>
+                <div class="example-btn" data-question="Essay writing tips">English</div>
+                <div class="example-btn" data-question="World War 2 summary">History</div>
+            </div>
+        </div>
+        
+        <div class="chat-box" id="chatBox">
+            <div class="message bot-message">
+                Hello! I'm your school project assistant. How can I help you today?
+            </div>
+        </div>
+        
+        <div class="typing" id="typingIndicator" style="display: none;">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your question here...">
+            <button id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // Your Gemini API key
+        const API_KEY = "AIzaSyB_aT9a0Hr8qb1fR4wpt9YKTozvssgP068";
+        
+        // Updated API endpoint for the latest model
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+        
+        // DOM elements
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const exampleBtns = document.querySelectorAll('.example-btn');
+        
+        // Add example button functionality
+        exampleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const question = btn.getAttribute('data-question');
+                userInput.value = question;
+                sendMessage();
+            });
+        });
+        
+        // Send message on button click
+        sendBtn.addEventListener('click', sendMessage);
+        
+        // Send message on Enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Focus input on load
+        userInput.focus();
+        
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessageToChat(message, 'user');
+            
+            // Clear input
+            userInput.value = '';
+            
+            // Show typing indicator
+            typingIndicator.style.display = 'flex';
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            try {
+                // Call Gemini API
+                const response = await fetchGeminiResponse(message);
+                
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                // Add bot response to chat
+                addMessageToChat(response, 'bot');
+                
+            } catch (error) {
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                // Show error message
+                console.error('Error:', error);
+                addMessageToChat(`Sorry, I'm having trouble responding. Please try again. Error: ${error.message}`, 'bot');
+            }
+            
+            // Scroll to bottom after response
+            scrollToBottom();
+        }
+        
+        async function fetchGeminiResponse(userMessage) {
+            const requestBody = {
+                contents: [{
+                    parts: [{
+                        text: userMessage
+                    }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 1024,
+                },
+                safetySettings: [
+                    {
+                        category: "HARM_CATEGORY_HARASSMENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_HATE_SPEECH",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    }
+                ]
+            };
+            
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'API request failed');
+            }
+            
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error('No response from AI');
+            }
+        }
+        
+        function addMessageToChat(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = message;
+            chatBox.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            scrollToBottom();
+        }
+        
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        // Add welcome message with sample questions
+        window.addEventListener('load', () => {
+            // Give a small delay for better UX
+            setTimeout(() => {
+                userInput.focus();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
